@@ -24,26 +24,51 @@ part1 = \in ->
     |> Num.toStr
     |> Ok
 
-strToNum : Dict Str Str
+strToNum : Dict Str Nat
 strToNum =
     Dict.empty {}
-    |> Dict.insert "one" "1"
-    |> Dict.insert "two" "2"
-    |> Dict.insert "three" "3"
-    |> Dict.insert "four" "4"
-    |> Dict.insert "five" "5"
-    |> Dict.insert "six" "6"
-    |> Dict.insert "seven" "7"
-    |> Dict.insert "eight" "8"
-    |> Dict.insert "nine" "9"
+    |> Dict.insert "one" 1
+    |> Dict.insert "two" 2
+    |> Dict.insert "three" 3
+    |> Dict.insert "four" 4
+    |> Dict.insert "five" 5
+    |> Dict.insert "six" 6
+    |> Dict.insert "seven" 7
+    |> Dict.insert "eight" 8
+    |> Dict.insert "nine" 9
+
+# 3, 4, or 5 long
+
+lstIsNum : List Str -> Result Nat [NotNum]
+lstIsNum = \lst ->
+    when lst is
+        [x] -> Str.toNat x |> Result.mapErr \_ -> NotNum
+        _ ->
+            joined = Str.joinWith lst ""
+
+            when Dict.get strToNum joined is
+                Ok val -> Ok val
+                Err _ -> Err NotNum
 
 getDigitsP2 = \s ->
-    # replace each occurance of the word num with `dight<word>`
-    # hopefully covers the case when two spellings overlap?
-    # might not...
-    # EDIT: does not..
-    newStr = Dict.walk strToNum s (\acc, word, val -> Str.replaceEach acc word "\(val)\(word)")
-    getDigits newStr
+    lst =
+        Str.graphemes s
+    range = List.range { start: At 0, end: At ((List.len lst) - 1) }
+    nums = List.joinMap
+        range
+        (\i ->
+            subListLens = [1, 3, 4, 5]
+
+            List.keepOks
+                subListLens
+                (\len ->
+                    lstIsNum (List.sublist lst { start: i, len })
+                )
+        )
+
+    when (List.first nums, List.last nums) is
+        (Ok x, Ok y) -> (x * 10) + y
+        _ -> crash "invalid list: \(s)"
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in ->
