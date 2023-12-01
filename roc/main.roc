@@ -37,17 +37,12 @@ runTask =
 
     input <- readDaysInput { day: dayArg, inputType } |> Task.await
 
-    # start <- Utc.now |> Task.await
-
     solution <-
         (App.findSolution dayArg)
         |> Task.fromResult
         |> Task.await
 
-    # NOTE I ADDED THIS TYPE AND GOT AN ERROR I COULDNT MAKE THE TASK ERR *
-    RunPartRes : Task { res : AoC.PartRes, time : U128 } []
-
-    runPart : [Part1, Part2] -> RunPartRes
+    runPart : [Part1, Part2] -> Task { res : AoC.PartRes, time : U128 } *
     runPart = \puzzle ->
         {} <- Stdout.write (ANSI.withFg "Running \(partToStr puzzle)..." Gray) |> Task.await
         start <- Utc.now |> Task.await
@@ -57,12 +52,21 @@ runTask =
         time = Utc.deltaAsMillis start end
         Task.ok { res, time }
 
-    # skipPart =
-    #     Task.O
+    skipPart =
+        Task.ok {res: Ok "SKIPPED PART", time: 0}
 
-    { res: partOneResult, time: p1Time } <- runPart Part1 |> Task.await
+    handleRunPart: [Part1, Part2] -> Task { res : AoC.PartRes, time : U128 } *
+    handleRunPart = \puzzle -> 
+        when (partArg, puzzle) is 
+            (Both, _) -> runPart puzzle
+            (Part1, Part1) -> runPart puzzle
+            (Part2, Part2) -> runPart puzzle
+            _ -> skipPart
 
-    { res: partTwoResult, time: p2Time } <- runPart Part1 |> Task.await
+
+    { res: partOneResult, time: p1Time } <- handleRunPart Part1 |> Task.await
+
+    { res: partTwoResult, time: p2Time } <- handleRunPart Part2 |> Task.await
 
     day = ANSI.withFg "\(Num.toStr dayArg)" Blue
     part1 = solutionResultToStr partOneResult
