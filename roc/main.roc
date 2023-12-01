@@ -11,6 +11,7 @@ app "AoC"
         pf.File,
         ANSI,
         App,
+        AoC,
     ]
     provides [main] to pf
 
@@ -24,6 +25,11 @@ handlErr = \err ->
         NotFound -> Stdout.line "input not found"
         SolutionNotFound -> Stdout.line "solution not found"
 
+partToStr = \p ->
+    when p is
+        Part1 -> "Part 1"
+        Part2 -> "Part 2"
+
 runTask : Task {} [UnableToParseArgs Str, SolutionNotFound, NotFound]
 runTask =
 
@@ -31,33 +37,39 @@ runTask =
 
     input <- readDaysInput { day: dayArg, inputType } |> Task.await
 
-    start <- Utc.now |> Task.await
+    # start <- Utc.now |> Task.await
 
     solution <-
         (App.findSolution dayArg)
         |> Task.fromResult
         |> Task.await
 
-    {} <- Stdout.write (ANSI.withFg "Running Part 1..." Gray) |> Task.await
+    # NOTE I ADDED THIS TYPE AND GOT AN ERROR I COULDNT MAKE THE TASK ERR *
+    RunPartRes : Task { res : AoC.PartRes, time : U128 } []
 
-    partOneResult = App.solvePuzzle { solution, input, puzzle: Part1 }
+    runPart : [Part1, Part2] -> RunPartRes
+    runPart = \puzzle ->
+        {} <- Stdout.write (ANSI.withFg "Running \(partToStr puzzle)..." Gray) |> Task.await
+        start <- Utc.now |> Task.await
+        res = App.solvePuzzle { solution, input, puzzle }
+        end <- Utc.now |> Task.await
+        {} <- Stdout.write (ANSI.withFg "done\n" Gray) |> Task.await
+        time = Utc.deltaAsMillis start end
+        Task.ok { res, time }
 
-    mid <- Utc.now |> Task.await
+    # skipPart =
+    #     Task.O
 
-    {} <- Stdout.write (ANSI.withFg "done\nRunning Part 2..." Gray) |> Task.await
+    { res: partOneResult, time: p1Time } <- runPart Part1 |> Task.await
 
-    partTwoResult = App.solvePuzzle { solution, input, puzzle: Part2 }
-
-    end <- Utc.now |> Task.await
-
-    {} <- Stdout.write (ANSI.withFg "done\n" Gray) |> Task.await
+    { res: partTwoResult, time: p2Time } <- runPart Part1 |> Task.await
 
     day = ANSI.withFg "\(Num.toStr dayArg)" Blue
     part1 = solutionResultToStr partOneResult
     part2 = solutionResultToStr partTwoResult
-    part1Time = ANSI.withFg (deltaToStr start mid) Blue
-    part2Time = ANSI.withFg (deltaToStr mid end) Blue
-    totalTime = ANSI.withFg (deltaToStr start end) Blue
+    part1Time = ANSI.withFg (deltaToStr p1Time) Blue
+    part2Time = ANSI.withFg (deltaToStr p2Time) Blue
+    totalTime = ANSI.withFg (deltaToStr (p1Time + p2Time)) Blue
 
     """
     ---------------------------------
@@ -98,6 +110,19 @@ toU8Unsafe = \s ->
         Ok n -> n
         Err _ -> crash "invalid u8: \(s)"
 
+PartSelection : [
+    Part1,
+    Part2,
+    Both,
+]
+
+partSelectionParse : Str -> PartSelection
+partSelectionParse = \s ->
+    when s is
+        "1" -> Part1
+        "2" -> Part2
+        _ -> Both
+
 InputType : [Normal, Example, StdIn]
 
 inputTypeParse : Str -> InputType
@@ -111,7 +136,7 @@ inputTypeParse = \s ->
 getArgs : Task
         {
             dayArg : U8,
-            partArg : U8,
+            partArg : PartSelection,
             inputType : InputType,
         }
         [UnableToParseArgs Str]_
@@ -120,7 +145,7 @@ getArgs =
     # drop first arg since its the binary/program name
     droppedArgs = List.dropFirst args 1
     when droppedArgs is
-        [day, part, inputType] -> Task.ok { dayArg: toU8Unsafe day, partArg: toU8Unsafe part, inputType: inputTypeParse inputType }
+        [day, part, inputType] -> Task.ok { dayArg: toU8Unsafe day, partArg: partSelectionParse part, inputType: inputTypeParse inputType }
         _ ->
             Task.err (UnableToParseArgs "bad arguments: \(listToStr droppedArgs)")
 
@@ -131,9 +156,9 @@ solutionResultToStr = \result ->
         Err NotImplemented -> "not yet implemented"
         Err (Error msg) -> "returned an error: \(msg)"
 
-deltaToStr : Utc, Utc -> Str
-deltaToStr = \start, end ->
-    millis = Utc.deltaAsMillis start end
+deltaToStr : U128 -> Str
+deltaToStr = \millis ->
+    # millis = Utc.deltaAsMillis start end
     if millis == 0 then
         "<0 ms"
     else
