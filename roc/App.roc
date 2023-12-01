@@ -7,6 +7,7 @@ interface App
     imports [
         AoC,
         D01.Day,
+        # -- Add day import
     ]
 
 filterByDay : U8 -> (AoC.Solution -> Result AoC.Solution [DoesNotMatch])
@@ -37,4 +38,5 @@ solvePuzzle = \selection ->
 solutions : List AoC.Solution
 solutions = [
     D01.Day.solution,
+    # -- Add day List
 ]

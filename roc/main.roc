@@ -53,16 +53,15 @@ runTask =
         Task.ok { res, time }
 
     skipPart =
-        Task.ok {res: Ok "SKIPPED PART", time: 0}
+        Task.ok { res: Ok "SKIPPED PART", time: 0 }
 
-    handleRunPart: [Part1, Part2] -> Task { res : AoC.PartRes, time : U128 } *
-    handleRunPart = \puzzle -> 
-        when (partArg, puzzle) is 
+    handleRunPart : [Part1, Part2] -> Task { res : AoC.PartRes, time : U128 } *
+    handleRunPart = \puzzle ->
+        when (partArg, puzzle) is
             (Both, _) -> runPart puzzle
             (Part1, Part1) -> runPart puzzle
             (Part2, Part2) -> runPart puzzle
             _ -> skipPart
-
 
     { res: partOneResult, time: p1Time } <- handleRunPart Part1 |> Task.await
 
