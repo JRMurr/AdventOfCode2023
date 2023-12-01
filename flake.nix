@@ -10,6 +10,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
         rocPkgs = roc.packages.${system};
+        rocFull = rocPkgs.full;
       in
       {
         formatter = pkgs.nixpkgs-fmt;
@@ -17,10 +18,14 @@
           default = pkgs.mkShell {
             buildInputs = with pkgs;
               [
-                rocPkgs.full
+                rocFull
                 aoc-cli
                 just
               ];
+
+            shellHook = ''
+              export ROC_LSP_PATH=${rocFull}/bin/roc_ls
+            '';
           };
         };
 
