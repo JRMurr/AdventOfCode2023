@@ -109,7 +109,7 @@
         "type": "github"
       }
     },
-    "roc": {
+   "roc": {
       "inputs": {
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils_2",
@@ -118,11 +118,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1701391319,
-        "narHash": "sha256-KJJsV8ZXVeqpwE1RZ72fnKDJNzijkzHJHcwQsNlYe4A=",
+        "lastModified": 1701310162,
+        "narHash": "sha256-qxNr61Y2SC2XaxMn+LCzYkPRw/06F9lKCS7iBSJbmNQ=",
         "owner": "roc-lang",
         "repo": "roc",
-        "rev": "47987602299cabd139ca60624c94d59df0e927ae",
+        "rev": "3f276b60187229e1673e5fe465f494723afe80c0",
         "type": "github"
       },
       "original": {

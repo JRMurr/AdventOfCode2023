@@ -5,26 +5,23 @@ interface D01.Day
 solution : AoC.Solution
 solution = { day: 1, part1, part2 }
 
-# listToNum : List U64 -> U64
-listToNum = \lst ->
-    when lst is
-        [x, y] -> x * 10 + y
-        _ -> crash "invalud list"
-
-getDigits : Str -> Int Natural
+# getDigits : Str -> Int Natural
 getDigits = \s ->
-    Str.graphemes s
-    |> List.keepOks (Str.toNat)
-    |> List.takeFirst 2
-    |> listToNum
+    lst = Str.graphemes s
+        |> List.keepOks (Str.toNat)
+    
+    when (List.first lst, List.last lst) is 
+        (Ok x, Ok y) -> (x * 10) + y
+        _ -> crash "invalid list: \(s)"
 
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
     Str.split in "\n"
-    |> List.map getDigits
-    |> List.sum
-    |> Num.toStr
-    |> Ok
+        |> List.dropIf (\s -> s == "")
+        |> List.map getDigits
+        |> List.sum
+        |> Num.toStr
+        |> Ok
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \_ -> Err NotImplemented
