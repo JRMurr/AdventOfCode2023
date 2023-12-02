@@ -7,6 +7,7 @@ interface App
     imports [
         AoC,
         D01.Day,
+        D02.Day,
         # -- Add day import
     ]
 
@@ -38,5 +39,6 @@ solvePuzzle = \selection ->
 solutions : List AoC.Solution
 solutions = [
     D01.Day.solution,
+    D02.Day.solution,
     # -- Add day List
 ]
