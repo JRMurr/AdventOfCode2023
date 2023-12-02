@@ -5,7 +5,7 @@ interface D01.Day
 solution : AoC.Solution
 solution = { day: 1, part1, part2 }
 
-# getDigits : Str -> Int Natural
+getDigits : Str -> Nat
 getDigits = \s ->
     lst =
         Str.graphemes s

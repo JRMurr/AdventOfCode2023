@@ -4,8 +4,8 @@
 default:
     @just --list
 
-run day='01' part='1' useExample='0':
-    roc run -- {{day}} {{part}} {{useExample}}
+run day='01' part='0' useExample='0':
+    roc dev -- {{day}} {{part}} {{useExample}}
 
 
 get day='01':
