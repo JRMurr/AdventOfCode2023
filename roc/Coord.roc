@@ -34,7 +34,6 @@ west = \c -> { x: c.x, y: c.y - 1 }
 east : Coord -> Coord
 east = \c -> { x: c.x, y: c.y + 1 }
 
-
 northEast : Coord -> Coord
 northEast = \c ->
     north c |> east
@@ -68,3 +67,17 @@ getNeighbors = \c ->
             southWest,
         ]
         (\f -> f c)
+
+expect
+    getNeighbors { x: 1, y: 1 }
+    == [
+        { x: 0, y: 1 }, # u
+        { x: 2, y: 1 }, # d
+        { x: 1, y: 2 }, # r
+        { x: 1, y: 0 }, # l
+
+        { x: 0, y: 2 }, # uR
+        { x: 0, y: 0 }, # ul
+        { x: 2, y: 2 }, # dr
+        { x: 2, y: 0 }, # dl
+    ]

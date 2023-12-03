@@ -70,42 +70,56 @@ neighborDigits = \grid, index ->
 combineDigitIndex : List Index -> List Index
 combineDigitIndex = \lst ->
 
-    List.sortWith lst (\a,b -> 
-        xComp = Num.compare a.x b.x
-        if xComp == EQ then Num.compare a.y b.y else xComp
-    )
-    |> List.walk [] (\acc, val -> 
-        # if List.len acc == 0 then List.append acc val
-        # else
-        when acc is 
-        # to the left/right of curr so no need to add
-        [.., last] if Coord.west val == last -> acc
-        # [.., last] if Coord.east val == last -> acc
-        _ -> List.append acc val
-    )
-
+    List.sortWith
+        lst
+        (\a, b ->
+            xComp = Num.compare a.x b.x
+            if xComp == EQ then Num.compare a.y b.y else xComp
+        )
+    |> List.walk
+        []
+        (\acc, val ->
+            # if List.len acc == 0 then List.append acc val
+            # else
+            when acc is
+                # to the left/right of curr so no need to add
+                [.., last] if Coord.east val == last || val == last -> acc
+                # [.., last] if Coord.east val == last -> acc
+                _ -> List.append acc val
+        )
 
 # given an index of a digit walk forward and back to build up the number
 collectDigits : Grid, Index -> U64
 collectDigits = \grid, index ->
-    
+
     reducer : List U64, GridVal, Index -> [Continue (List U64), Break (List U64)]
-    reducer = \acc, val, _ ->
+    reducer = \acc, val, idx ->
         when val is
-            Digit x -> Continue (List.append acc x)
+            Digit x ->
+                newAcc = List.append acc x
+                if
+                    Array2D.isRowStart idx
+                then
+                    Break newAcc
+                else
+                    Continue newAcc
+
             _ -> Break acc
 
-
-    # 
+    #
     leftWalk = Array2D.walkUntil grid [] { direction: Backwards, start: index } reducer |> List.reverse
-    rightWalk = Array2D.walkUntil grid [] { direction: Forwards, start: Coord.east index } reducer
+    # rightWalk = Array2D.walkUntil grid [] { direction: Forwards, start: Coord.east index } reducer
 
-    digits = List.concat leftWalk rightWalk
+    # digits = List.concat leftWalk rightWalk
+    digits = leftWalk
+
+    dbg
+        digits
 
     toNum : U64, U64, Nat -> U64
     toNum = \acc, d, idx ->
         idxU64 = Num.toU64 idx
-        mult = Num.powInt 10 idxU64 
+        mult = Num.powInt 10 idxU64
         acc + (mult * d)
 
     List.reverse digits
@@ -127,7 +141,8 @@ part1 = \in ->
                 _ -> Bool.false
         )
 
-    dbg Array2D.shape grid
+    dbg
+        Array2D.shape grid
 
     # TODO: the same number can have its start in here multiple times..
     startDigits =
@@ -139,13 +154,13 @@ part1 = \in ->
 
     valid = List.map startDigits (\i -> collectDigits grid i)
 
-    dbg valid 
+    dbg
+        valid
 
-    sum = 
+    sum =
         valid
         |> List.walk 0 (\acc, x -> acc + x)
-    
-    
+
     Ok (Num.toStr sum)
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
