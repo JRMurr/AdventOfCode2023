@@ -1,13 +1,16 @@
 interface D03.Day
     exposes [solution]
-    imports [AoC, Util]
+    imports [
+        AoC,
+        Util,
+        Coord.{ Coord, neighbors },
+        Array2D.{ Array2D },
+    ]
 
 solution : AoC.Solution
 solution = { day: 3, part1, part2 }
 
-Cord : { x : Nat, y : Nat }{}
-
-toCord : Nat, Nat -> Cord
+toCord : Nat, Nat -> Coord
 toCord = \row, col -> { y: row, x: col }
 
 GridVal : [Empty, Digit U64, Symbol Str]
@@ -19,30 +22,34 @@ charToGridVal = \s ->
         x if Result.isOk (Str.toNat x) -> Digit (Util.toU64Unsafe x)
         y -> Symbol y
 
-Grid : Dict Cord Str
+Grid : Array2D GridVal
 
-parseLine : Str, Nat -> List ({ x : Nat, y : Nat }, GridVal)
-parseLine = \s, row ->
+parseLine : Str -> List GridVal
+parseLine = \s ->
     Str.graphemes s
-    |> List.mapWithIndex
-        (\c, idx ->
-            (toCord row idx, charToGridVal c)
-        )
+    |> List.map (charToGridVal)
 
-# parseGrid : Str -> Grid
+parseGrid : Str -> Array2D GridVal
 parseGrid = \s ->
     Str.split s "\n"
-    |> List.mapWithIndex (\line, row -> parseLine line row)
-    |> Util.flatten
-    |> Dict.fromList
+    |> List.map parseLine
+    |> Array2D.fromLists FitShortest
+# |> Util.flatten
+# |> Dict.fromList
+
+getGridVal : Coord, Grid -> GridVal
+getGridVal = \c, grid ->
+    when Array2D.get grid c is
+        Ok v -> v
+        Err _ -> Empty
 
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
-    # grid : Grid
+    grid : Grid
     grid = parseGrid in
 
     dbg
-        grid
+        getGridVal { x: 0, y: 0 } grid
 
     Ok "sad"
 
