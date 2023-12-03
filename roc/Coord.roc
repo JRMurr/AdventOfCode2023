@@ -12,10 +12,10 @@ interface Coord
         southWest,
 
         # all dirs
-        neighbors,
+        getNeighbors,
     ]
     imports [
-        Array2D.{Index}
+        Array2D.{ Index },
     ]
 
 # Coord : { x : Nat, y : Nat }{}
@@ -53,8 +53,8 @@ southEast = \c ->
 #
 # Get all Coords around this one
 #
-neighbors : Coord -> List Coord
-neighbors = \c ->
+getNeighbors : Coord -> List Coord
+getNeighbors = \c ->
     List.map
         [
             north,
