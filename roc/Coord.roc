@@ -22,17 +22,18 @@ interface Coord
 
 Coord : Index
 
-north : Coord -> Coord
-north = \c -> { x: c.x, y: c.y - 1 }
-
 south : Coord -> Coord
-south = \c -> { x: c.x, y: c.y + 1 }
+south = \c -> { x: c.x + 1, y: c.y }
 
-east : Coord -> Coord
-east = \c -> { x: c.x + 1, y: c.y }
+north : Coord -> Coord
+north = \c -> { x: c.x - 1, y: c.y }
 
 west : Coord -> Coord
-west = \c -> { x: c.x - 1, y: c.y }
+west = \c -> { x: c.x, y: c.y - 1 }
+
+east : Coord -> Coord
+east = \c -> { x: c.x, y: c.y + 1 }
+
 
 northEast : Coord -> Coord
 northEast = \c ->
