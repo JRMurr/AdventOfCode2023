@@ -8,6 +8,7 @@ interface App
         AoC,
         D01.Day,
         D02.Day,
+        D03.Day,
         # -- Add day import
     ]
 
@@ -40,5 +41,6 @@ solutions : List AoC.Solution
 solutions = [
     D01.Day.solution,
     D02.Day.solution,
+    D03.Day.solution,
     # -- Add day List
 ]

@@ -31,4 +31,4 @@ sed -i "s/# -- Add day List/$dayStr.Day.solution,\n    # -- Add day List/" ./App
 
 roc format App.roc
 
-# aoc download -o -d $dayNum -I -i ./$dayStr/in
+aoc download -o -d $dayNum -I -i ./$dayStr/in
