@@ -5,7 +5,6 @@ interface D03.Day
         Util,
         Coord.{ getNeighbors },
         Array2D.{ Index, Array2D },
-        "in.example" as exampleInput : Str,
     ]
 
 solution : AoC.Solution
