@@ -144,9 +144,6 @@ part1 = \in ->
 
     valid = getAllNumbers grid
 
-    dbg
-        valid
-
     sum =
         valid
         |> List.walk 0 (\acc, x -> acc + (digitsToNum x.digits))
