@@ -30,6 +30,11 @@ charToGridVal = \s ->
 
 Grid : Array2D GridVal
 
+PartNumber : {
+    digits : List U64,
+    indices : List Array2D.Index,
+}
+
 parseLine : Str -> List GridVal
 parseLine = \s ->
     Str.graphemes s
@@ -59,63 +64,70 @@ getCoordsWithPred = \grid, fn ->
             if fn val then List.append acc c else acc
         )
 
+getAllNumbers : Grid -> List PartNumber
+getAllNumbers = \grid ->
+    isOverlapping = \a, b ->
+        List.any a \elemA ->
+            List.any b \elemB ->
+                elemA == elemB
+
+    symbolPoints = getCoordsWithPred
+        grid
+        (\v ->
+            when v is
+                Symbol _ -> Bool.true
+                _ -> Bool.false
+        )
+    allowedPoints =
+        List.map symbolPoints (\p -> neighborDigits grid p)
+        |> Util.flatten
+
+    newPartNumber = { digits: [], indices: [] }
+    startState = { candidates: [], current: newPartNumber }
+    finalState = Array2D.walk
+        grid
+        startState
+        { direction: Forwards }
+        \{ candidates, current }, elem, index ->
+            when elem is
+                Digit d if !(Array2D.isRowEnd grid index) ->
+                    {
+                        candidates,
+                        current: {
+                            digits: List.append current.digits d,
+                            indices: List.append current.indices index,
+                        },
+                    }
+
+                Digit d ->
+                    newCurr = {
+                        digits: List.append current.digits d,
+                        indices: List.append current.indices index,
+                    }
+
+                    {
+                        candidates: List.append candidates newCurr,
+                        current: newPartNumber,
+                    }
+
+                _ ->
+                    {
+                        candidates: List.append candidates current,
+                        current: newPartNumber,
+                    }
+
+    finalState.candidates
+    |> List.append finalState.current
+    |> List.keepIf \candidate ->
+        isOverlapping candidate.indices allowedPoints
+
 # Given a coord return indexes for digits that are neighbors
 neighborDigits : Grid, Index -> List Index
 neighborDigits = \grid, index ->
     getNeighbors index
     |> List.keepIf (\i -> valIsDigit (getGridVal i grid))
 
-# if two digits are next to each, "merge"
-#  them to only return 1 index for each number instead of two
-combineDigitIndex : List Index -> List Index
-combineDigitIndex = \lst ->
-
-    List.sortWith
-        lst
-        (\a, b ->
-            xComp = Num.compare a.x b.x
-            if xComp == EQ then Num.compare a.y b.y else xComp
-        )
-    |> List.walk
-        []
-        (\acc, val ->
-            # if List.len acc == 0 then List.append acc val
-            # else
-            when acc is
-                # to the left/right of curr so no need to add
-                [.., last] if Coord.east val == last || val == last -> acc
-                # [.., last] if Coord.east val == last -> acc
-                _ -> List.append acc val
-        )
-
-# given an index of a digit walk forward and back to build up the number
-collectDigits : Grid, Index -> U64
-collectDigits = \grid, index ->
-
-    reducer : List U64, GridVal, Index -> [Continue (List U64), Break (List U64)]
-    reducer = \acc, val, idx ->
-        when val is
-            Digit x ->
-                newAcc = List.append acc x
-                if
-                    Array2D.isRowStart idx
-                then
-                    Break newAcc
-                else
-                    Continue newAcc
-
-            _ -> Break acc
-
-    #
-    leftWalk = Array2D.walkUntil grid [] { direction: Backwards, start: index } reducer |> List.reverse
-    # rightWalk = Array2D.walkUntil grid [] { direction: Forwards, start: Coord.east index } reducer
-
-    # digits = List.concat leftWalk rightWalk
-    digits = leftWalk
-
-    dbg
-        digits
-
+digitsToNum = \digits ->
     toNum : U64, U64, Nat -> U64
     toNum = \acc, d, idx ->
         idxU64 = Num.toU64 idx
@@ -125,41 +137,18 @@ collectDigits = \grid, index ->
     List.reverse digits
     |> List.walkWithIndex 0u64 toNum
 
-# exampleGrid = parseGrid exampleInput
-
-# expect collectDigits exampleGrid { x: 0, y: 1 } == 467
-
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
     grid = parseGrid in
 
-    symbolPoints = getCoordsWithPred
-        grid
-        (\v ->
-            when v is
-                Symbol _ -> Bool.true
-                _ -> Bool.false
-        )
-
-    dbg
-        Array2D.shape grid
-
-    # TODO: the same number can have its start in here multiple times..
-    startDigits =
-        List.map symbolPoints (\p -> neighborDigits grid p)
-        |> Util.flatten
-        |> combineDigitIndex
-
-    # dbg startDigits
-
-    valid = List.map startDigits (\i -> collectDigits grid i)
+    valid = getAllNumbers grid
 
     dbg
         valid
 
     sum =
         valid
-        |> List.walk 0 (\acc, x -> acc + x)
+        |> List.walk 0 (\acc, x -> acc + (digitsToNum x.digits))
 
     Ok (Num.toStr sum)
 
