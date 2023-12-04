@@ -64,13 +64,14 @@ getCoordsWithPred = \grid, fn ->
             if fn val then List.append acc c else acc
         )
 
+isOverlapping : List a, List a -> Bool where a implements Eq
+isOverlapping = \a, b ->
+    List.any a \elemA ->
+        List.any b \elemB ->
+            elemA == elemB
+
 getAllNumbers : Grid -> List PartNumber
 getAllNumbers = \grid ->
-    isOverlapping = \a, b ->
-        List.any a \elemA ->
-            List.any b \elemB ->
-                elemA == elemB
-
     symbolPoints = getCoordsWithPred
         grid
         (\v ->
@@ -153,4 +154,30 @@ part1 = \in ->
     Ok (Num.toStr sum)
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+    grid = parseGrid in
+    valid = getAllNumbers grid
+
+    gears = getCoordsWithPred
+        grid
+        (\v ->
+            when v is
+                Symbol "*" -> Bool.true
+                _ -> Bool.false
+        )
+
+    List.map gears (\gear -> neighborDigits grid gear)
+    |> List.map
+        (\allowedPoints ->
+            List.keepIf valid \candidate ->
+                isOverlapping candidate.indices allowedPoints
+        )
+    |> List.keepIf (\lst -> List.len lst == 2)
+    |> List.map
+        (\parts ->
+            List.map parts (\x -> digitsToNum x.digits)
+            |> List.product
+        )
+    |> List.sum
+    |> Num.toStr
+    |> Ok
