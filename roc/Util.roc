@@ -1,5 +1,5 @@
 interface Util
-    exposes [toU64Unsafe, flatten, toNatUnsafe]
+    exposes [toU64Unsafe, flatten, toNatUnsafe, parseSpaceSepNums]
     imports []
 
 toU64Unsafe = \s ->
@@ -15,7 +15,6 @@ toNatUnsafe = \s ->
 flatten : List (List a) -> List a
 flatten = \lst ->
     List.walk lst [] (\acc, x -> List.concat acc x)
-
 
 parseSpaceSepNums : Str -> Set U64
 parseSpaceSepNums = \s ->

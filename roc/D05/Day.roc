@@ -46,10 +46,12 @@ parseRange = \s ->
 
 RangeMap : List Range
 
-parseFullMap : Str -> RangeMap
+parseFullMap : Str -> (Str, RangeMap)
 parseFullMap = \s ->
-    Str.split s "\n"
-    |> List.map parseRange
+    dbg s
+    when Str.split s "\n" is
+        [name, .. as ranges] -> (name, List.map ranges parseRange)
+        _ -> crash "bad map \(s)"
 
 # expect parseFullMap "50 98 2\n52 50 48" == [{src: 98, dest: 50, len 2}, {src: 50, dest: 52, len 48}]
 
@@ -85,21 +87,32 @@ chainLookups = \maps, startVal ->
 
 # expect chainLookups [Dict.fromList [(4, 50)], Dict.fromList [(51, 100)], Dict.fromList [(50, 2)]] 4 == 2
 
-# parseSeeds = \s ->
-#     Str.replace s "seeds: "
-#     |> Util.parseSpaceSepNums
+parseSeeds = \s ->
+    Str.replaceEach s "seeds: " ""
+    |> Util.parseSpaceSepNums
+    |> Set.toList
 
+Input : {
+    seeds : List U64,
+    maps : List (Str, RangeMap),
+}
+
+parse : Str -> Input
 parse = \s ->
     when Str.split s "\n\n" is
-        [seeds, .. as maps] -> crash "TODO:"
+        [seeds, .. as maps] -> { seeds: parseSeeds seeds, maps: List.map maps parseFullMap }
         _ -> crash "bad input \(s)"
 
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
-    dbg
-        Str.split in "\n\n"
+    { seeds, maps: mapsWithName } = in |> Str.trim |> parse
 
-    Err NotImplemented
+    maps = List.map mapsWithName (.1)
+
+    List.map seeds (\seed -> chainLookups maps seed)
+    |> List.min
+    |> Result.mapErr (\_ -> Error "impossible")
+    |> Result.map (Num.toStr)
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \_ -> Err NotImplemented
