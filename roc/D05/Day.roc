@@ -48,7 +48,9 @@ RangeMap : List Range
 
 parseFullMap : Str -> (Str, RangeMap)
 parseFullMap = \s ->
-    dbg s
+    dbg
+        s
+
     when Str.split s "\n" is
         [name, .. as ranges] -> (name, List.map ranges parseRange)
         _ -> crash "bad map \(s)"
@@ -90,7 +92,6 @@ chainLookups = \maps, startVal ->
 parseSeeds = \s ->
     Str.replaceEach s "seeds: " ""
     |> Util.parseSpaceSepNums
-    |> Set.toList
 
 Input : {
     seeds : List U64,
@@ -114,5 +115,21 @@ part1 = \in ->
     |> Result.mapErr (\_ -> Error "impossible")
     |> Result.map (Num.toStr)
 
+SeedRange : { start : U64, end : U64 }
+
+getSeedRanges : List U64 -> List SeedRange
+getSeedRanges = \lst ->
+    lst
+    |> List.chunksOf 2
+    |> List.map (\pair -> { start: pair.0, end: pair.1 })
+
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+    { seeds: seedRanges, maps: mapsWithName } = in |> Str.trim |> parse
+
+    maps = List.map mapsWithName (.1)
+
+    List.map seeds (\seed -> chainLookups maps seed)
+    |> List.min
+    |> Result.mapErr (\_ -> Error "impossible")
+    |> Result.map (Num.toStr)

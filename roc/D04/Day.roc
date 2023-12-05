@@ -125,7 +125,8 @@ part2 = \in ->
 
         Dict.insert acc c.id (copies)
 
-    vals = Str.split in "\n"
+    vals =
+        Str.split in "\n"
         |> List.keepOks parseLine
         |> List.walkBackwards
             (Dict.empty {})
