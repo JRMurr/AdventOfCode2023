@@ -15,3 +15,10 @@ toNatUnsafe = \s ->
 flatten : List (List a) -> List a
 flatten = \lst ->
     List.walk lst [] (\acc, x -> List.concat acc x)
+
+
+parseSpaceSepNums : Str -> Set U64
+parseSpaceSepNums = \s ->
+    Str.split s " "
+    |> List.keepOks Str.toU64
+    |> Set.fromList
