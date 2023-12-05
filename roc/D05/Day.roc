@@ -5,71 +5,99 @@ interface D05.Day
 solution : AoC.Solution
 solution = { day: 5, part1, part2 }
 
-# This will probably be sad on full input..
-# Parse the range str to a list of (src,dest)
-parseRange : Str -> List (U64, U64)
+Range : {
+    src : U64,
+    dest : U64,
+    len : U64,
+}
+
+parseRange : Str -> Range
 parseRange = \s ->
     vals =
         Str.split s " "
-        |> List.keepOks Str.toNat
+        |> List.keepOks Str.toU64
     when vals is
         [dest, src, len] ->
-            getRange = \start ->
-                List.range { start: At start, end: Length len } |> List.map Num.toU64
-            destRange = getRange dest
-            srcRange = getRange src
-            List.map2 srcRange destRange (\srcV, destV -> (srcV, destV))
+            { src, dest, len }
 
         _ -> crash "bad range \(s)"
 
-expect parseRange "50 98 2" == [(98, 50), (99, 51)]
+# # This will probably be sad on full input..
+# # Parse the range str to a list of (src,dest)
+# parseRange : Str -> List (U64, U64)
+# parseRange = \s ->
+#     vals =
+#         Str.split s " "
+#         |> List.keepOks Str.toNat
+#     when vals is
+#         [dest, src, len] ->
+#             getRange = \start ->
+#                 List.range { start: At start, end: Length len } |> List.map Num.toU64
+#             destRange = getRange dest
+#             srcRange = getRange src
+#             List.map2 srcRange destRange (\srcV, destV -> (srcV, destV))
+
+#         _ -> crash "bad range \(s)"
+
+# expect parseRange "50 98 2" == [(98, 50), (99, 51)]
 
 # 50 98 2
 # 52 50 48
 
-parseFullMap : Str -> Dict U64 U64
+RangeMap : List Range
+
+parseFullMap : Str -> RangeMap
 parseFullMap = \s ->
     Str.split s "\n"
     |> List.map parseRange
-    |> Util.flatten
-    |> Dict.fromList
 
-expect parseFullMap "50 98 2\n52 50 4" == Dict.fromList [(98, 50), (99, 51), (50, 52), (51, 53), (52, 54), (53, 55)]
+# expect parseFullMap "50 98 2\n52 50 48" == [{src: 98, dest: 50, len 2}, {src: 50, dest: 52, len 48}]
 
-# lookup in dict with v, if not found return v
-getWithSelfDefault : Dict v v, v -> v
-getWithSelfDefault = \dict, v ->
-    Dict.get dict v
-    |> Result.withDefault v
+getMappingInRange : Range, U64 -> Result U64 [NoMapping]
+getMappingInRange = \range, v ->
+    { src, len, dest } = range
+    if (src <= v && v < src + len) then
+        offset = v - src
+        Ok (dest + offset)
+    else
+        Err NoMapping
 
-# start with an inital v, keep doing a pipe of lookups in the following dicts to get the end value
-chainLookups : List (Dict v v), v -> v
-chainLookups = \dicts, startVal ->
-    List.walk
-        dicts
-        startVal
-        (\curr, dict ->
-            getWithSelfDefault dict curr
+getMapping : RangeMap, U64 -> U64
+getMapping = \ranges, v ->
+    List.walkUntil
+        ranges
+        v
+        (\default, range ->
+            when getMappingInRange range v is
+                Ok x -> Break x
+                _ -> Continue default
         )
 
-expect chainLookups [Dict.fromList [(4, 50)], Dict.fromList [(51, 100)], Dict.fromList [(50, 2)]] 4 == 2
+# start with an inital v, keep doing a pipe of lookups in the following maps to get the end value
+chainLookups : List RangeMap, U64 -> U64
+chainLookups = \maps, startVal ->
+    List.walk
+        maps
+        startVal
+        (\curr, map ->
+            getMapping map curr
+        )
 
-parseSeeds = \s ->
-    Str.replace s "seeds: "
-    |> Util.parseSpaceSepNums
+# expect chainLookups [Dict.fromList [(4, 50)], Dict.fromList [(51, 100)], Dict.fromList [(50, 2)]] 4 == 2
 
-parse = \s -> when Str.split in "\n\n" is
-    [seeds, .. as maps] -> crash "TODO:"
-    _ -> crash "bad input \(s)"
+# parseSeeds = \s ->
+#     Str.replace s "seeds: "
+#     |> Util.parseSpaceSepNums
 
-
+parse = \s ->
+    when Str.split s "\n\n" is
+        [seeds, .. as maps] -> crash "TODO:"
+        _ -> crash "bad input \(s)"
 
 part1 : Str -> Result Str [NotImplemented, Error Str]
-part1 = \in -> 
-    dbg (
+part1 = \in ->
+    dbg
         Str.split in "\n\n"
-    )
-
 
     Err NotImplemented
 
