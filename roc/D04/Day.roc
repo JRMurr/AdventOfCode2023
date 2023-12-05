@@ -70,13 +70,14 @@ expect
     ==
     Ok { id: 1, mine: Set.fromList [83, 86, 6, 31], winners: Set.fromList [41, 48, 83] }
 
+numMatches = \c ->
+    Set.intersection c.mine c.winners
+    |> Set.len
+    |> Num.toU64
+
 calcPoints : Card -> U64
 calcPoints = \c ->
-    numMatches =
-        Set.intersection c.mine c.winners
-        |> Set.len
-        |> Num.toU64
-    when numMatches is
+    when numMatches c is
         0 -> 0
         x -> Num.powInt 2 (x - 1)
 
@@ -104,7 +105,7 @@ part2 = \in ->
 
     reducer : Dict U64 U64, Card -> Dict U64 U64
     reducer = \acc, c ->
-        numCards = calcPoints c
+        numCards = numMatches c |> Num.toNat
 
         range : List U64
         range = List.range { start: After c.id, end: Length numCards, step: 1 }
@@ -113,18 +114,23 @@ part2 = \in ->
             range
             |> List.map
                 (\id ->
-                    acc.get id
-                    |> Result.withDefault 0
+                    1
+                    + (
+
+                        Dict.get acc id
+                        |> Result.withDefault 0
+                    )
                 )
+            |> List.sum
 
-        Dict.insert c.id copies
+        Dict.insert acc c.id (copies)
 
-    Str.split in "\n"
-    |> List.keepOks parseLine
-    |> List.walkBackwards
-        (Dict.empty {})
-        reducer
-    |> Dict.get 1
-    |> Result.withDefault -1
+    vals = Str.split in "\n"
+        |> List.keepOks parseLine
+        |> List.walkBackwards
+            (Dict.empty {})
+            reducer
+
+    Dict.walk vals 0u64 \acc, _, x -> 1 + acc + x
     |> Num.toStr
     |> Ok
