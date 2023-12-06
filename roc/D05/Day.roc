@@ -112,9 +112,9 @@ part1 = \in ->
     |> Result.mapErr (\_ -> Error "impossible")
     |> Result.map (Num.toStr)
 
-SeedRange : { start : U64, length : U64 }
+InputRange : { start : U64, length : U64 }
 
-getSeedRanges : List U64 -> List SeedRange
+getSeedRanges : List U64 -> List InputRange
 getSeedRanges = \lst ->
     lst
     |> List.chunksOf 2
@@ -125,9 +125,15 @@ getSeedRanges = \lst ->
                 _ -> crash "bad lst "
         )
 
-seedRangeToList : SeedRange -> List Nat
+seedRangeToList : InputRange -> List Nat
 seedRangeToList = \sr ->
     List.range { start: At (sr.start |> Num.toNat), end: Length (sr.length |> Num.toNat) }
+
+# getMappingWithRange : InputRange, RangeMap ->
+# getMappingWithRange = \inputRange, map ->
+
+# TODO: get overlaps for each input range of the current map
+# we only need to look at the min in each overlap and the min not in anyoverlap
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in ->
