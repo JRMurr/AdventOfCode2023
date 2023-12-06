@@ -1,5 +1,5 @@
 interface Util
-    exposes [toU64Unsafe, flatten, toNatUnsafe, parseSpaceSepNums]
+    exposes [toU64Unsafe, flatten, toNatUnsafe, parseSpaceSepNums, tuplify]
     imports []
 
 toU64Unsafe = \s ->
@@ -20,3 +20,9 @@ parseSpaceSepNums : Str -> List U64
 parseSpaceSepNums = \s ->
     Str.split s " "
     |> List.keepOks Str.toU64
+
+tuplify : List a -> (a, a)
+tuplify = \lst ->
+    when lst is
+        [x, y] -> (x, y)
+        _ -> crash "bad list to tuplify"
