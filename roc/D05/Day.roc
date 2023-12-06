@@ -48,9 +48,6 @@ RangeMap : List Range
 
 parseFullMap : Str -> (Str, RangeMap)
 parseFullMap = \s ->
-    dbg
-        s
-
     when Str.split s "\n" is
         [name, .. as ranges] -> (name, List.map ranges parseRange)
         _ -> crash "bad map \(s)"
@@ -115,13 +112,22 @@ part1 = \in ->
     |> Result.mapErr (\_ -> Error "impossible")
     |> Result.map (Num.toStr)
 
-SeedRange : { start : U64, end : U64 }
+SeedRange : { start : U64, length : U64 }
 
 getSeedRanges : List U64 -> List SeedRange
 getSeedRanges = \lst ->
     lst
     |> List.chunksOf 2
-    |> List.map (\pair -> { start: pair.0, end: pair.1 })
+    |> List.map
+        (\pairLst ->
+            when pairLst is
+                [start, length] -> { start, length }
+                _ -> crash "bad lst "
+        )
+
+seedRangeToList : SeedRange -> List Nat
+seedRangeToList = \sr ->
+    List.range { start: At (sr.start |> Num.toNat), end: Length (sr.length |> Num.toNat) }
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in ->
@@ -129,7 +135,11 @@ part2 = \in ->
 
     maps = List.map mapsWithName (.1)
 
-    List.map seeds (\seed -> chainLookups maps seed)
-    |> List.min
-    |> Result.mapErr (\_ -> Error "impossible")
-    |> Result.map (Num.toStr)
+    getSeedRanges seedRanges
+    |> List.walk
+        Num.maxU64
+        (\currMin, seedRange ->
+            List.walk (seedRangeToList seedRange) currMin (\possibleMin, seed -> Num.min possibleMin (chainLookups maps (seed |> Num.toU64)))
+        )
+    |> Num.toStr
+    |> Ok
