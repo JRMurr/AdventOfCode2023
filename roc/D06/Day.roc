@@ -76,18 +76,21 @@ parseP2 = \s ->
             |> Util.tuplify
             |> .1
             |> Str.replaceEach " " "" 
-            |> Util.parseSpaceSepNums
+            |> Util.toU64Unsafe
     (time, distance) =
         s
         |> Str.trim
         |> Str.split "\n"
         |> List.map parseLine
         |> Util.tuplify
-    {time, ditance}
+    {time, distance}
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in -> 
-    dbg in
+    {max,min} = in
         |> parseP2
-
-    Err NotImplemented
+        |> getChargeRange
+    
+    (max - min + 1) 
+    |> Num.toStr
+    |> Ok
