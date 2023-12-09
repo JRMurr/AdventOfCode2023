@@ -122,5 +122,100 @@ part1 = \in ->
     |> Num.toStr
     |> Ok
 
+maxKey : Dict Str U64 -> Str
+maxKey = \d ->
+    Dict.toList d
+    |> List.sortWith (\p1, p2 -> Num.compare p1.1 p2.1)
+    |> List.first
+    |> Util.unwrap
+    |> .0
+
+countHandleJoker : Hand -> Dict Str U64
+countHandleJoker = \h ->
+    counts = Util.countElems h.cards
+    when Dict.get counts "J" is
+        Err _ -> counts
+        Ok 5 -> counts # already max
+        Ok jCount ->
+            droppedJdict = Dict.remove counts "J"
+
+            Dict.update
+                droppedJdict
+                (maxKey droppedJdict)
+                (\v ->
+                    when v is
+                        Present x -> Present (x + jCount)
+                        _ -> Missing
+                )
+
+classifyHandP2 : Hand -> HandType
+classifyHandP2 = \h ->
+    counts = countHandleJoker h
+
+    getMinMaxValues : Dict * (Num a) -> (Num a, Num a)
+    getMinMaxValues = \d ->
+        vals = Dict.values d
+
+        (vals |> List.min |> Util.unwrap, vals |> List.max |> Util.unwrap)
+
+    when getMinMaxValues counts is
+        (_, 5) -> FiveKind
+        (1, 4) -> FourKind
+        (2, 3) -> FullHouse
+        (1, 3) -> ThreeKind
+        (1, 2) if Dict.len counts == 3 -> TwoPair
+        (1, 2) if Dict.len counts == 4 -> OnePair
+        (1, 1) -> HighCard
+        _ ->
+            dbg
+                h
+
+            crash "bad counts"
+
+compareCardsP2 : Card, Card -> [LT, EQ, GT]
+compareCardsP2 = \x, y ->
+    toNum = \c ->
+        when c is
+            "J" -> 0
+            "2" -> 1
+            "3" -> 2
+            "4" -> 3
+            "5" -> 4
+            "6" -> 5
+            "7" -> 6
+            "8" -> 7
+            "9" -> 8
+            "T" -> 9
+            "Q" -> 11
+            "K" -> 12
+            "A" -> 13
+            _ -> crash "bad card: \(c)"
+    Num.compare (toNum x) (toNum y)
+
+compareHandsP2 : Hand, Hand -> [LT, EQ, GT]
+compareHandsP2 = \x, y ->
+    typeComp = compareTypes (classifyHandP2 x) (classifyHandP2 y)
+    if typeComp != EQ then
+        typeComp
+    else
+        zipped = List.map2 x.cards y.cards (\a, b -> (a, b))
+        List.walkUntil
+            zipped
+            EQ
+            (\acc, (a, b) ->
+                compRes = compareCardsP2 a b
+                if compRes != EQ then Break compRes else Continue acc
+            )
+
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+    Str.split in "\n"
+    |> List.map parseHand
+    |> List.sortWith compareHandsP2
+    |> List.mapWithIndex
+        (\h, idx ->
+            h.bid * ((idx + 1) |> Num.toU64)
+        )
+    |> List.sum
+    |> Num.toStr
+    |> Ok
