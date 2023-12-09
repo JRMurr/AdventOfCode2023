@@ -1,5 +1,5 @@
 interface Util
-    exposes [toU64Unsafe, flatten, toNatUnsafe, parseSpaceSepNums, tuplify, countElems, unwrap]
+    exposes [toU64Unsafe, flatten, toNatUnsafe, parseSpaceSepNums, tuplify, countElems, unwrap, dbge]
     imports []
 
 toU64Unsafe = \s ->
@@ -48,3 +48,9 @@ unwrap = \res ->
     when res is
         Ok x -> x
         Err _ -> crash "bad unwrap"
+
+dbge = \x ->
+    dbg
+        x
+
+    x

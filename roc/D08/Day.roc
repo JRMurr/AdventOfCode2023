@@ -79,26 +79,53 @@ walkNetwork = \network, currNode, stepNum ->
     if currNode == "ZZZ" then
         stepNum
     else
-        { instructions, nodes } = network
-        numInstructions = List.len instructions
-        instrIdx = ((stepNum |> Num.toNat) % numInstructions)
-        currInstruction =
-            List.get instructions instrIdx
-            |> Util.unwrap
-
-        currPair = Dict.get nodes currNode |> Util.unwrap
-
-        nextNode = if currInstruction == Left then currPair.0 else currPair.1
+        currInstruction = getCurrInstr network stepNum
+        nextNode = getNextNode (network.nodes) currNode currInstruction
 
         walkNetwork network nextNode (stepNum + 1)
 
+getCurrInstr : Network, U64 -> Instruction
+getCurrInstr = \network, stepNum ->
+    { instructions } = network
+    numInstructions = List.len instructions
+    instrIdx = ((stepNum |> Num.toNat) % numInstructions)
+    List.get instructions instrIdx
+    |> Util.unwrap
+
+getNextNode = \nodes, currNode, currInstruction ->
+    currPair = Dict.get nodes currNode |> Util.unwrap
+    if currInstruction == Left then currPair.0 else currPair.1
+
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
-
     parseNetwork in
     |> walkNetwork "AAA" 0
     |> Num.toStr
     |> Ok
 
+# TODO: need to figure out how the
+# paths cycle for each starting point to then figure out when it would sync up
+walkP2 : Network, List NodeId, U64 -> U64
+walkP2 = \network, currNodes, stepNum ->
+    if List.all currNodes (\s -> Str.endsWith s "Z") then
+        stepNum
+    else
+        currInstruction = getCurrInstr network stepNum
+        nextNodes = List.map
+            currNodes
+            (\n ->
+                getNextNode (network.nodes) n currInstruction
+            )
+        walkP2 network nextNodes (stepNum + 1)
+
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+    network = parseNetwork in
+
+    startNodes =
+        Dict.keys (network.nodes)
+        |> List.keepIf (\s -> Str.endsWith s "A")
+
+    walkP2 network startNodes 0
+    |> Num.toStr
+    |> Ok
