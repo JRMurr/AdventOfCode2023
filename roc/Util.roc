@@ -1,5 +1,16 @@
 interface Util
-    exposes [toU64Unsafe, flatten, toNatUnsafe, parseSpaceSepNums, tuplify, countElems, unwrap, dbge]
+    exposes [
+        toU64Unsafe,
+        flatten,
+        toNatUnsafe,
+        parseSpaceSepNums,
+        tuplify,
+        countElems,
+        unwrap,
+        dbge,
+        mapAdjacent,
+        mapLines,
+    ]
     imports []
 
 toU64Unsafe = \s ->
@@ -54,3 +65,12 @@ dbge = \x ->
         x
 
     x
+
+mapAdjacent : List a, (a, a -> c) -> List c
+mapAdjacent = \list, f ->
+    List.map2 list (List.dropFirst list 1) f
+
+mapLines : Str, (Str -> a) -> List a
+mapLines = \in, mapper ->
+    Str.split in "\n"
+    |> List.map mapper
