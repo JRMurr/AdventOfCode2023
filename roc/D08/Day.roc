@@ -3,7 +3,7 @@ interface D08.Day
     imports [
         AoC,
         Util,
-        Parser.Core.{ flatten, Parser, oneOf, const, skip, chompWhile, sepBy, oneOrMore, between, map, keep },
+        Parser.Core.{ Parser, oneOf, const, skip, chompWhile, sepBy, oneOrMore, between, map, keep },
         Parser.String.{ Utf8, string, parseStr, scalar, codeunitSatisfies },
     ]
 
@@ -138,7 +138,6 @@ greatestCommonDivisor = \a, b ->
         a
     else
         greatestCommonDivisor b (a % b)
-
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in ->
