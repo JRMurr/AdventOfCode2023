@@ -74,12 +74,31 @@ parseNetwork = \s ->
         Err (ParsingFailure e) -> crash "ParsingFailure: \(e)"
         Err (ParsingIncomplete e) -> crash "ParsingIncomplete: \(e)"
 
+walkNetwork : Network, NodeId, U64 -> U64
+walkNetwork = \network, currNode, stepNum ->
+    if currNode == "ZZZ" then
+        stepNum
+    else
+        { instructions, nodes } = network
+        numInstructions = List.len instructions
+        instrIdx = ((stepNum |> Num.toNat) % numInstructions)
+        currInstruction =
+            List.get instructions instrIdx
+            |> Util.unwrap
+
+        currPair = Dict.get nodes currNode |> Util.unwrap
+
+        nextNode = if currInstruction == Left then currPair.0 else currPair.1
+
+        walkNetwork network nextNode (stepNum + 1)
+
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
-    dbg
-        parseNetwork in
 
-    Err NotImplemented
+    parseNetwork in
+    |> walkNetwork "AAA" 0
+    |> Num.toStr
+    |> Ok
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \_ -> Err NotImplemented
