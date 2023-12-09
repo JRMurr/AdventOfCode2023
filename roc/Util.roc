@@ -5,6 +5,7 @@ interface Util
         toNatUnsafe,
         parseSpaceSepNums,
         tuplify,
+        tuplify3,
         countElems,
         unwrap,
         dbge,
@@ -37,6 +38,12 @@ tuplify = \lst ->
     when lst is
         [x, y] -> (x, y)
         _ -> crash "bad list to tuplify"
+
+tuplify3 : List a -> (a, a, a)
+tuplify3 = \lst ->
+    when lst is
+        [x, y, z] -> (x, y, z)
+        _ -> crash "bad list to tuplify3"
 
 countElems : List a -> Dict a U64 where a implements Hash & Eq
 countElems = \lst ->

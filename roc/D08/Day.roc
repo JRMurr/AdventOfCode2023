@@ -12,7 +12,7 @@ solution = { day: 8, part1, part2 }
 
 Instruction : [Left, Right]
 
-NodeId : Str
+NodeId : (U8, U8, U8)
 
 Node : (NodeId, NodeId)
 
@@ -43,8 +43,9 @@ parseNetwork = \s ->
 
     alphaNums =
         oneOrMore (codeunitSatisfies isAlphaNum)
-        |> map (\x -> Str.fromUtf8 x |> Result.mapErr (\_ -> "sad alphaNum"))
-        |> flatten
+        |> map (Util.tuplify3)
+    # |> map (\x -> Str.fromUtf8 x |> Result.mapErr (\_ -> "sad alphaNum"))
+    # |> flatten
 
     nodeId = consumeEndingWhitespace alphaNums
 
@@ -76,7 +77,7 @@ parseNetwork = \s ->
 
 walkNetwork : Network, NodeId, U64 -> U64
 walkNetwork = \network, currNode, stepNum ->
-    if currNode == "ZZZ" then
+    if currNode == ('Z', 'Z', 'Z') then
         stepNum
     else
         currInstruction = getCurrInstr network stepNum
@@ -99,24 +100,45 @@ getNextNode = \nodes, currNode, currInstruction ->
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
     parseNetwork in
-    |> walkNetwork "AAA" 0
+    |> walkNetwork ('A', 'A', 'A') 0
     |> Num.toStr
     |> Ok
 
-# TODO: need to figure out how the
-# paths cycle for each starting point to then figure out when it would sync up
-walkP2 : Network, List NodeId, U64 -> U64
-walkP2 = \network, currNodes, stepNum ->
-    if List.all currNodes (\s -> Str.endsWith s "Z") then
+# walkP2 : Network, List NodeId, U64 -> U64
+# walkP2 = \network, currNodes, stepNum ->
+#     if List.all currNodes (\(_, _, x) -> x == 'Z') then
+#         stepNum
+#     else
+#         currInstruction = getCurrInstr network stepNum
+#         nextNodes = List.map
+#             currNodes
+#             (\n ->
+#                 getNextNode (network.nodes) n currInstruction
+#             )
+#         walkP2 network nextNodes (stepNum + 1)
+
+walkP2 : Network, NodeId, U64 -> U64
+walkP2 = \network, currNode, stepNum ->
+    if currNode.2 == 'Z' then
         stepNum
     else
         currInstruction = getCurrInstr network stepNum
-        nextNodes = List.map
-            currNodes
-            (\n ->
-                getNextNode (network.nodes) n currInstruction
-            )
-        walkP2 network nextNodes (stepNum + 1)
+        nextNode = getNextNode (network.nodes) currNode currInstruction
+        walkP2 network nextNode (stepNum + 1)
+
+leastCommonMultipleInList = \list ->
+    List.walk list 1 \lcm, num ->
+        leastCommonMultiple lcm num
+
+leastCommonMultiple = \a, b ->
+    (a * b) // (greatestCommonDivisor a b)
+
+greatestCommonDivisor = \a, b ->
+    if b == 0 then
+        a
+    else
+        greatestCommonDivisor b (a % b)
+
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in ->
@@ -124,8 +146,10 @@ part2 = \in ->
 
     startNodes =
         Dict.keys (network.nodes)
-        |> List.keepIf (\s -> Str.endsWith s "A")
+        |> List.keepIf (\(_, _, x) -> x == 'A')
 
-    walkP2 network startNodes 0
+    startNodes
+    |> List.map (\n -> walkP2 network n 0)
+    |> leastCommonMultipleInList
     |> Num.toStr
     |> Ok
