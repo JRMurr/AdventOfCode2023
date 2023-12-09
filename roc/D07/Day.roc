@@ -122,55 +122,50 @@ part1 = \in ->
     |> Num.toStr
     |> Ok
 
-maxKey : Dict Str U64 -> Str
-maxKey = \d ->
-    Dict.toList d
-    |> List.sortWith (\p1, p2 -> Num.compare p1.1 p2.1)
-    |> List.first
-    |> Util.unwrap
-    |> .0
+# maxKey : Dict Str U64 -> Str
+# maxKey = \d ->
+#     Dict.toList d
+#     |> List.sortWith (\p1, p2 -> Num.compare p1.1 p2.1)
+#     |> List.first
+#     |> Util.unwrap
+#     |> .0
 
-countHandleJoker : Hand -> Dict Str U64
+countHandleJoker : Hand -> (Dict Str U64, U64)
 countHandleJoker = \h ->
     counts = Util.countElems h.cards
     when Dict.get counts "J" is
-        Err _ -> counts
-        Ok 5 -> counts # already max
+        Err _ -> (counts, 0)
+        Ok 5 -> (counts, 5) # already max
         Ok jCount ->
             droppedJdict = Dict.remove counts "J"
-
-            Dict.update
-                droppedJdict
-                (maxKey droppedJdict)
-                (\v ->
-                    when v is
-                        Present x -> Present (x + jCount)
-                        _ -> Missing
-                )
+            (droppedJdict, jCount)
+            # Dict.update
+            #     droppedJdict
+            #     (maxKey droppedJdict)
+            #     (\v ->
+            #         when v is
+            #             Present x -> Present (x + jCount)
+            #             _ -> Missing
+            #     )
 
 classifyHandP2 : Hand -> HandType
 classifyHandP2 = \h ->
-    counts = countHandleJoker h
+    (countsDict, jCount) = countHandleJoker h
+    
+    counts = countsDict |> Dict.values |> List.sortDesc
 
-    getMinMaxValues : Dict * (Num a) -> (Num a, Num a)
-    getMinMaxValues = \d ->
-        vals = Dict.values d
+    when (counts, jCount) is 
+        ([], 5) -> FiveKind
+        ([_], _) -> FiveKind
+        ([4, 1], 0) | ([3, 1], 1) | ([2, 1], 2) | ([1, 1], 3) -> FourKind
+        ([3, 2], 0) | ([2, 2], 1) -> FullHouse
+        ([3, 1, 1], 0) | ([2, 1, 1], 1) | ([1, 1, 1], 2) -> ThreeKind
+        ([2, 2, 1], 0) -> TwoPair
+        ([2, 1, 1, 1], 0) | ([1, 1, 1, 1], 1) -> OnePair
+        ([1, 1, 1, 1, 1], 0) -> HighCard
+        _ -> crash "sad"
+    
 
-        (vals |> List.min |> Util.unwrap, vals |> List.max |> Util.unwrap)
-
-    when getMinMaxValues counts is
-        (_, 5) -> FiveKind
-        (1, 4) -> FourKind
-        (2, 3) -> FullHouse
-        (1, 3) -> ThreeKind
-        (1, 2) if Dict.len counts == 3 -> TwoPair
-        (1, 2) if Dict.len counts == 4 -> OnePair
-        (1, 1) -> HighCard
-        _ ->
-            dbg
-                h
-
-            crash "bad counts"
 
 compareCardsP2 : Card, Card -> [LT, EQ, GT]
 compareCardsP2 = \x, y ->
