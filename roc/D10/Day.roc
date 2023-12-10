@@ -3,7 +3,7 @@ interface D10.Day
     imports [
         AoC,
         Util.{ unwrap, headTail },
-        Coord.{north,south,east,west},
+        Coord.{ north, south, east, west },
         Array2D.{ Index, Array2D },
         Parser.Core.{ Parser, oneOf, const, skip, sepBy, oneOrMore, map, flatten },
         Parser.String.{ Utf8, parseStr, scalar },
@@ -69,34 +69,48 @@ getPossibleNeighbors = \currIdx, grid ->
     allowedRight = [Horizontal, NorthWest, SouthWest]
 
     DirAndAllowed : {
-        dir : Index -> Index,
+        dir : Index -> Result Index [OutOfBounds],
         allowedValues : List Tile,
     }
 
     getValidInDir : DirAndAllowed -> Result Index [InvalidIdx]
     getValidInDir = \dirAndAllowed ->
         { dir, allowedValues } = dirAndAllowed
-        dbg allowedValues
-        possibleNextIdx = dir currIdx
-        possible = Array2D.get grid possibleNextIdx |> Result.withDefault Ground
+        dbg
+            allowedValues
+
+        dbg
+            currIdx
+
+        possibleNextIdx <- Result.try (dir currIdx |> Result.mapErr (\_ -> InvalidIdx))
+
+        dbg
+            possibleNextIdx
+
+        possible =
+            Array2D.get grid possibleNextIdx
+            |> Result.withDefault Ground
+        dbg
+            possible
+
         isValid = List.contains allowedValues possible
         if isValid then Ok possibleNextIdx else Err InvalidIdx
 
-    checkAbove : DirAndAllowed
-    checkAbove = { dir: north, allowedValues: allowedAbove }
-
-    checkBelow : DirAndAllowed
-    checkBelow = { dir: south, allowedValues: allowedBelow }
-
-    checkLeft : DirAndAllowed
-    checkLeft = { dir: west, allowedValues: allowedLeft }
-
-    checkRight : DirAndAllowed
-    checkRight = { dir: east, allowedValues: allowedRight }
-
     checkDirs : List DirAndAllowed -> List Index
     checkDirs = \checks ->
-        checks |> List.keepOks getValidInDir
+        List.keepOks checks getValidInDir
+
+    checkAbove : DirAndAllowed
+    checkAbove = { dir: \i -> north grid i, allowedValues: allowedAbove }
+
+    checkBelow : DirAndAllowed
+    checkBelow = { dir: \i -> south grid i, allowedValues: allowedBelow }
+
+    checkLeft : DirAndAllowed
+    checkLeft = { dir: \i -> west grid i, allowedValues: allowedLeft }
+
+    checkRight : DirAndAllowed
+    checkRight = { dir: \i -> east grid i, allowedValues: allowedRight }
 
     when currTile is
         Vertical -> checkDirs [checkAbove, checkBelow]
@@ -132,6 +146,9 @@ findFarthest = \grid, queue, visited ->
     { idx, history } = curr
 
     possibleNext = getPossibleNeighbors idx grid
+
+    dbg
+        "after"
 
     filtedPossibleByHistory = possibleNext |> List.dropIf (\x -> List.contains history x)
 

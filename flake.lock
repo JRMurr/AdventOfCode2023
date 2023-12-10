@@ -131,11 +131,38 @@
         "type": "github"
       }
     },
+    "roc2nix": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "roc": [
+          "roc"
+        ]
+      },
+      "locked": {
+        "lastModified": 1701489044,
+        "narHash": "sha256-G89JAvY5aNOs4YxfofqsP08jtoWIqP7ZrDnvTd6LtAg=",
+        "owner": "JRMurr",
+        "repo": "roc2nix",
+        "rev": "abac83d52826a5e7351b0c52873722b73415efad",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JRMurr",
+        "repo": "roc2nix",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "roc": "roc"
+        "roc": "roc",
+        "roc2nix": "roc2nix"
       }
     },
     "rust-overlay": {

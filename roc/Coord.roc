@@ -1,54 +1,100 @@
 interface Coord
     exposes [
         Coord,
+
         # dirs
-        north,
-        south,
         east,
         west,
-        northEast,
-        northWest,
-        southEast,
-        southWest,
+        north,
+        south,
+        northUnsafe,
+        southUnsafe,
+        eastUnsafe,
+        westUnsafe,
+        northEastUnsafe,
+        northWestUnsafe,
+        southEastUnsafe,
+        southWestUnsafe,
 
         # all dirs
         getNeighbors,
     ]
     imports [
-        Array2D.{ Index },
+        Array2D.{ Array2D, Index, isRowEnd, isColEnd, isRowStart, isColStart, shape },
     ]
 
 # Coord : { x : Nat, y : Nat }{}
 
+east : Array2D *, Index -> Result Index [OutOfBounds]
+east = \array, index ->
+    if isRowEnd array index then
+        if isColEnd array index then
+            Err OutOfBounds
+        else
+            Ok { x: index.x + 1, y: 0 }
+    else
+        Ok { x: index.x, y: index.y + 1 }
+
+west : Array2D *, Index -> Result Index [OutOfBounds]
+west = \array, index ->
+    if isRowStart index then
+        if isColStart index then
+            Err OutOfBounds
+        else
+            Ok { x: index.x - 1, y: (shape array).dimY - 1 }
+    else
+        Ok { x: index.x, y: index.y - 1 }
+
+south : Array2D *, Index -> Result Index [OutOfBounds]
+south = \array, index ->
+    if isColEnd array index then
+        if isRowEnd array index then
+            Err OutOfBounds
+        else
+            Ok { x: 0, y: index.y + 1 }
+    else
+        Ok { x: index.x + 1, y: index.y }
+
+north : Array2D *, Index -> Result Index [OutOfBounds]
+north = \array, index ->
+    if isColStart index then
+        if isRowStart index then
+            Err OutOfBounds
+        else
+            Ok { x: (shape array).dimX - 1, y: index.y - 1 }
+    else
+        Ok { x: index.x - 1, y: index.y }
+
 Coord : Index
 
-south : Coord -> Coord
-south = \c -> { x: c.x + 1, y: c.y }
+southUnsafe : Coord -> Coord
+southUnsafe = \c -> { x: c.x + 1, y: c.y }
 
-north : Coord -> Coord
-north = \c -> { x: c.x - 1, y: c.y }
+northUnsafe : Coord -> Coord
+northUnsafe = \c -> { x: c.x - 1, y: c.y }
 
-west : Coord -> Coord
-west = \c -> { x: c.x, y: c.y - 1 }
+westUnsafe : Coord -> Coord
+westUnsafe = \c ->
+    { x: c.x, y: c.y - 1 }
 
-east : Coord -> Coord
-east = \c -> { x: c.x, y: c.y + 1 }
+eastUnsafe : Coord -> Coord
+eastUnsafe = \c -> { x: c.x, y: c.y + 1 }
 
-northEast : Coord -> Coord
-northEast = \c ->
-    north c |> east
+northEastUnsafe : Coord -> Coord
+northEastUnsafe = \c ->
+    northUnsafe c |> eastUnsafe
 
-northWest : Coord -> Coord
-northWest = \c ->
-    north c |> west
+northWestUnsafe : Coord -> Coord
+northWestUnsafe = \c ->
+    northUnsafe c |> westUnsafe
 
-southWest : Coord -> Coord
-southWest = \c ->
-    south c |> west
+southWestUnsafe : Coord -> Coord
+southWestUnsafe = \c ->
+    southUnsafe c |> westUnsafe
 
-southEast : Coord -> Coord
-southEast = \c ->
-    south c |> east
+southEastUnsafe : Coord -> Coord
+southEastUnsafe = \c ->
+    southUnsafe c |> eastUnsafe
 
 #
 # Get all Coords around this one
@@ -57,14 +103,14 @@ getNeighbors : Coord -> List Coord
 getNeighbors = \c ->
     List.map
         [
-            north,
-            south,
-            east,
-            west,
-            northEast,
-            northWest,
-            southEast,
-            southWest,
+            northUnsafe,
+            southUnsafe,
+            eastUnsafe,
+            westUnsafe,
+            northEastUnsafe,
+            northWestUnsafe,
+            southEastUnsafe,
+            southWestUnsafe,
         ]
         (\f -> f c)
 

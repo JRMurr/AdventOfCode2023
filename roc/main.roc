@@ -12,6 +12,7 @@ app "AoC"
         ANSI,
         App,
         AoC,
+        Util,
     ]
     provides [main] to pf
 
@@ -102,11 +103,6 @@ runTask =
 
 #         _ -> Task.err UnableToParseArgs
 
-listToStr : List Str -> Str
-listToStr = \lst ->
-    joined = Str.joinWith lst ", "
-    "[\(joined)]"
-
 toU8Unsafe : Str -> U8
 toU8Unsafe = \s ->
     when Str.toU8 s is
@@ -153,9 +149,8 @@ getArgs =
             dbg
                 args
 
-            Task.ok { dayArg: 10, partArg: partSelectionParse "1", inputType: inputTypeParse "1" }
-
-# Task.err (UnableToParseArgs "bad arguments: \(listToStr droppedArgs)")
+            # Task.ok { dayArg: 10, partArg: partSelectionParse "1", inputType: inputTypeParse "0" }
+            Task.err (UnableToParseArgs "bad arguments: \(Util.listToStr droppedArgs)")
 
 solutionResultToStr : Result Str [NotImplemented, Error Str] -> Str
 solutionResultToStr = \result ->

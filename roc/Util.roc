@@ -12,6 +12,7 @@ interface Util
         mapAdjacent,
         mapLines,
         headTail,
+        listToStr,
     ]
     imports []
 
@@ -88,3 +89,8 @@ headTail = \lst ->
     when lst is
         [head, .. as tail] -> Ok (head, tail)
         _ -> Err EmptyList
+
+listToStr : List Str -> Str
+listToStr = \lst ->
+    joined = Str.joinWith lst ", "
+    "[\(joined)]"
