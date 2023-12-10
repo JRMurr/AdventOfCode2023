@@ -12,7 +12,7 @@ app "AoC"
         ANSI,
         App,
         AoC,
-        Util,
+        # Util,
     ]
     provides [main] to pf
 
@@ -91,17 +91,10 @@ runTask =
     """
     |> Stdout.line
 
-# getArgs : Task { dayArg : U64 } [UnableToParseArgs]
-# getArgs =
-#     args <- Arg.list |> Task.await
-
-#     when args is
-#         [_, second, ..] ->
-#             when (Str.toU64 first, Str.toU64 second) is
-#                 (Ok dayArg) -> Task.ok { yearArg, dayArg }
-#                 _ -> Task.err UnableToParseArgs
-
-#         _ -> Task.err UnableToParseArgs
+listToStr : List Str -> Str
+listToStr = \lst ->
+    joined = Str.joinWith lst ", "
+    "[\(joined)]"
 
 toU8Unsafe : Str -> U8
 toU8Unsafe = \s ->
@@ -150,7 +143,7 @@ getArgs =
                 args
 
             # Task.ok { dayArg: 10, partArg: partSelectionParse "1", inputType: inputTypeParse "0" }
-            Task.err (UnableToParseArgs "bad arguments: \(Util.listToStr droppedArgs)")
+            Task.err (UnableToParseArgs "bad arguments: \(listToStr droppedArgs)")
 
 solutionResultToStr : Result Str [NotImplemented, Error Str] -> Str
 solutionResultToStr = \result ->

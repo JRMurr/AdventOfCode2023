@@ -76,22 +76,12 @@ getPossibleNeighbors = \currIdx, grid ->
     getValidInDir : DirAndAllowed -> Result Index [InvalidIdx]
     getValidInDir = \dirAndAllowed ->
         { dir, allowedValues } = dirAndAllowed
-        dbg
-            allowedValues
-
-        dbg
-            currIdx
 
         possibleNextIdx <- Result.try (dir currIdx |> Result.mapErr (\_ -> InvalidIdx))
-
-        dbg
-            possibleNextIdx
 
         possible =
             Array2D.get grid possibleNextIdx
             |> Result.withDefault Ground
-        dbg
-            possible
 
         isValid = List.contains allowedValues possible
         if isValid then Ok possibleNextIdx else Err InvalidIdx
@@ -146,9 +136,6 @@ findFarthest = \grid, queue, visited ->
     { idx, history } = curr
 
     possibleNext = getPossibleNeighbors idx grid
-
-    dbg
-        "after"
 
     filtedPossibleByHistory = possibleNext |> List.dropIf (\x -> List.contains history x)
 
