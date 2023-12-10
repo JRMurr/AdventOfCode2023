@@ -3,7 +3,7 @@ interface D10.Day
     imports [
         AoC,
         Util.{ unwrap, headTail },
-        Coord,
+        Coord.{north,south,east,west},
         Array2D.{ Index, Array2D },
         Parser.Core.{ Parser, oneOf, const, skip, sepBy, oneOrMore, map, flatten },
         Parser.String.{ Utf8, parseStr, scalar },
@@ -68,19 +68,33 @@ getPossibleNeighbors = \currIdx, grid ->
     allowedLeft = [Horizontal, NorthEast, SouthEast]
     allowedRight = [Horizontal, NorthWest, SouthWest]
 
-    getValidInDir = \(dir, allowedVals) ->
+    DirAndAllowed : {
+        dir : Index -> Index,
+        allowedValues : List Tile,
+    }
+
+    getValidInDir : DirAndAllowed -> Result Index [InvalidIdx]
+    getValidInDir = \dirAndAllowed ->
+        { dir, allowedValues } = dirAndAllowed
+        dbg allowedValues
         possibleNextIdx = dir currIdx
-        dbg possibleNextIdx
         possible = Array2D.get grid possibleNextIdx |> Result.withDefault Ground
-        dbg possible
-        isValid = List.contains allowedVals possible
+        isValid = List.contains allowedValues possible
         if isValid then Ok possibleNextIdx else Err InvalidIdx
 
-    checkAbove = (Coord.north, allowedAbove)
-    checkBelow = (Coord.south, allowedBelow)
-    checkLeft = (Coord.west, allowedLeft)
-    checkRight = (Coord.east, allowedRight)
+    checkAbove : DirAndAllowed
+    checkAbove = { dir: north, allowedValues: allowedAbove }
 
+    checkBelow : DirAndAllowed
+    checkBelow = { dir: south, allowedValues: allowedBelow }
+
+    checkLeft : DirAndAllowed
+    checkLeft = { dir: west, allowedValues: allowedLeft }
+
+    checkRight : DirAndAllowed
+    checkRight = { dir: east, allowedValues: allowedRight }
+
+    checkDirs : List DirAndAllowed -> List Index
     checkDirs = \checks ->
         checks |> List.keepOks getValidInDir
 
@@ -99,6 +113,7 @@ getPossibleNeighbors = \currIdx, grid ->
                 checkLeft,
                 checkRight,
             ]
+
         Ground -> crash "you shouldnt be on a ground...."
 
 # expect
@@ -117,9 +132,6 @@ findFarthest = \grid, queue, visited ->
     { idx, history } = curr
 
     possibleNext = getPossibleNeighbors idx grid
-
-    dbg
-        possibleNext
 
     filtedPossibleByHistory = possibleNext |> List.dropIf (\x -> List.contains history x)
 
