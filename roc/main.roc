@@ -153,7 +153,9 @@ getArgs =
             dbg
                 args
 
-            Task.err (UnableToParseArgs "bad arguments: \(listToStr droppedArgs)")
+            Task.ok { dayArg: 10, partArg: partSelectionParse "1", inputType: inputTypeParse "1" }
+
+# Task.err (UnableToParseArgs "bad arguments: \(listToStr droppedArgs)")
 
 solutionResultToStr : Result Str [NotImplemented, Error Str] -> Str
 solutionResultToStr = \result ->
