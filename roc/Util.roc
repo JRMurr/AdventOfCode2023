@@ -11,6 +11,7 @@ interface Util
         dbge,
         mapAdjacent,
         mapLines,
+        headTail,
     ]
     imports []
 
@@ -81,3 +82,9 @@ mapLines : Str, (Str -> a) -> List a
 mapLines = \in, mapper ->
     Str.split in "\n"
     |> List.map mapper
+
+headTail : List a -> Result (a, List a) [EmptyList]
+headTail = \lst ->
+    when lst is
+        [head, .. as tail] -> Ok (head, tail)
+        _ -> Err EmptyList

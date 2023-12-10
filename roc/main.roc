@@ -150,6 +150,9 @@ getArgs =
     when droppedArgs is
         [day, part, inputType] -> Task.ok { dayArg: toU8Unsafe day, partArg: partSelectionParse part, inputType: inputTypeParse inputType }
         _ ->
+            dbg
+                args
+
             Task.err (UnableToParseArgs "bad arguments: \(listToStr droppedArgs)")
 
 solutionResultToStr : Result Str [NotImplemented, Error Str] -> Str
