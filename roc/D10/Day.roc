@@ -23,6 +23,17 @@ Tile : [
     Start, # S
 ]
 
+tileToChar = \t ->
+    when t is
+        Vertical -> "|"
+        Horizontal -> "-"
+        NorthEast -> "L"
+        NorthWest -> "J"
+        SouthWest -> "7"
+        SouthEast -> "F"
+        Ground -> "."
+        Start -> "S"
+
 Grid : Array2D Tile
 
 parseGrid : Str -> Grid
@@ -62,11 +73,11 @@ getPossibleNeighbors : Index, Grid -> List Index
 getPossibleNeighbors = \currIdx, grid ->
     currTile = Array2D.get grid currIdx |> unwrap
 
-    allowedAbove = [Vertical, SouthEast, SouthWest]
-    allowedBelow = [Vertical, NorthEast, NorthWest]
+    allowedAbove = [Start, Vertical, SouthEast, SouthWest]
+    allowedBelow = [Start, Vertical, NorthEast, NorthWest]
 
-    allowedLeft = [Horizontal, NorthEast, SouthEast]
-    allowedRight = [Horizontal, NorthWest, SouthWest]
+    allowedLeft = [Start, Horizontal, NorthEast, SouthEast]
+    allowedRight = [Start, Horizontal, NorthWest, SouthWest]
 
     DirAndAllowed : {
         dir : Index -> Result Index [OutOfBounds],
@@ -159,5 +170,212 @@ part1 = \in ->
     |> Num.toStr
     |> Ok
 
+buildLoopTiles : Index, Grid, List QuededIdx -> List Index
+buildLoopTiles = \startIdx, grid, queue ->
+    (curr, queueNext) = headTail queue |> unwrap
+    { idx, history } = curr
+
+    possibleNext = getPossibleNeighbors idx grid
+
+    filtedPossibleByLast =
+        possibleNext
+        |> List.dropIf
+            (\x ->
+                when curr.history is
+                    [] -> Bool.false
+                    [.., last] -> x == last
+            )
+
+    updatedHistory = history |> List.append idx
+
+    if
+        List.contains filtedPossibleByLast startIdx
+    then
+        updatedHistory
+    else
+        toQueue = filtedPossibleByLast |> List.map (\x -> { idx: x, history: updatedHistory })
+        buildLoopTiles startIdx grid (List.concat queueNext toQueue)
+
+getBoundingBox : List Index -> Result { min : Index, max : Index } [ListWasEmpty]
+getBoundingBox = \lst ->
+    xVals = List.map lst (.x)
+    yVals = List.map lst (.y)
+
+    minX <- List.min xVals |> Result.try
+    maxX <- List.max xVals |> Result.try
+
+    minY <- List.min yVals |> Result.try
+    maxY <- List.max yVals |> Result.try
+
+    Ok { min: { x: minX, y: minY }, max: { x: maxX, y: maxY } }
+
+replaceStart : Grid, List Index, Index -> Grid
+replaceStart = \grid, loop, startIdx ->
+    getIndexinLoop = \idx -> List.findFirstIndex loop (\x -> x == idx)
+    startIdxInLoop = getIndexinLoop startIdx |> unwrap
+
+    loopLen = List.len loop
+    allowedNeighborIdx =
+        [
+            startIdxInLoop + 1,
+            startIdxInLoop + loopLen, # add loop len to not deal with negative nums
+        ]
+        |> List.map (\x -> x % loopLen)
+
+    inAllowNeighbors = \neighbor ->
+        when getIndexinLoop neighbor is
+            Ok idx if List.contains allowedNeighborIdx idx -> Bool.true
+            _ -> Bool.false
+
+    dirs = [
+        (North, north),
+        (South, south),
+        (East, east),
+        (West, west),
+    ]
+    startNeighbors =
+        List.keepOks
+            dirs
+            (\(tag, dir) ->
+                when dir grid startIdx is
+                    Ok neighbor if inAllowNeighbors neighbor -> Ok tag
+                    _ -> Err "sad"
+            )
+
+    startLabel =
+        when startNeighbors is
+            [North, South] -> Vertical
+            [East, West] -> Horizontal
+            [North, East] -> NorthEast
+            [North, West] -> NorthWest
+            [South, East] -> SouthEast
+            [South, West] -> SouthWest
+            _ ->
+                dbg
+                    startNeighbors
+
+                crash "bad neighbors"
+
+    Array2D.set grid startIdx startLabel
+
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+
+    grid = parseGrid in
+    startIdx = findStart grid
+
+    loop = buildLoopTiles startIdx grid [{ idx: startIdx, history: [] }]
+
+    { min, max } = getBoundingBox loop |> unwrap
+
+    replacedStart = replaceStart grid loop startIdx
+
+    # flipInOrOutOnLoop = \currOnLoop, nextOnLoop, inOrOut ->
+    #     flipped = (if inOrOut == In then Out else In)
+    #     # # Cant use Bool in pattern match???
+    #     when inOrOut is
+    #         Out if nextOnLoop -> In
+    #         In if nextOnLoop -> Out
+    #         _ -> inOrOut
+    # _ if nextOnLoop -> Out
+    # _ if currOnLoop && !nextOnLoop -> In
+    # _ -> inOrOut
+
+    # if
+    #     (currOnLoop && !nextOnLoop)
+
+    # then
+    #     (if inOrOut == In then Out else In)
+    # else
+    #     inOrOut
+
+    # followDirUntil : Index, (Index -> Result Index [OutOfBounds]), (Index -> Bool) -> Result Index [NotFound]
+    # followDirUntil = \currIdx, dir, pred ->
+    #     if pred currIdx then
+    #         Ok currIdx
+    #     else
+    #         when dir currIdx is
+    #             Ok newIdx -> followDirUntil newIdx dir pred
+    #             Err _ -> Err NotFound
+
+    # # followDirUntilLoop = \start, dir ->
+    # #     followDirUntil start dir (\c -> List.contains loop c)
+
+    # followDirUntilNotLoop = \start, dir ->
+    #     followDirUntil start dir (\c -> !(List.contains loop c))
+
+    flipInOrOutOnLoop = \shouldFlip, inOrOut ->
+        flipped = (if inOrOut == In then Out else In)
+        if shouldFlip then flipped else inOrOut
+
+    walkGridLine : Index, (Index -> Result Index [OutOfBounds]), [In, Out], Set Index -> Set Index
+    walkGridLine = \currIdx, dir, inOrOut, acc ->
+        onLoop = List.contains loop currIdx
+
+        shouldFlip =
+            when (Array2D.get replacedStart currIdx |> unwrap) is
+                Horizontal -> Bool.true
+                Vertical -> Bool.true
+                _ -> Bool.false
+
+        newAcc = if inOrOut == In && !onLoop then Set.insert acc currIdx else acc
+
+        when dir currIdx is
+            Ok newIdx ->
+                nextOnLoop = List.contains loop newIdx
+                newInOrOut = flipInOrOutOnLoop shouldFlip inOrOut
+
+                walkGridLine newIdx dir newInOrOut newAcc
+
+            Err _ -> newAcc
+
+    walkGridLines : List Index, (Index -> Result Index [OutOfBounds]) -> Set Index
+    walkGridLines = \startIdxs, dir ->
+        List.walk
+            startIdxs
+            (Set.empty {})
+            (\acc, start ->
+                walkGridLine start dir Out acc
+            )
+
+    checkedRows =
+        List.range { start: At min.x, end: At max.x }
+        |> List.map (\x -> { x, y: 0 })
+        |> walkGridLines (\i -> east grid i)
+    checkedCols =
+        List.range { start: At min.y, end: At max.y }
+        |> List.map (\y -> { y, x: 0 })
+        |> walkGridLines (\i -> south grid i)
+
+    intersection = Set.intersection checkedRows checkedCols
+
+    drawnGrid = Util.drawArray
+        grid
+        (\tile, _ ->
+            tileToChar tile
+        )
+
+    drawnGridWithMarked = Util.drawArray
+        grid
+        (\tile, idx ->
+            if Set.contains checkedRows idx then
+                "I"
+            else
+                tileToChar tile
+        )
+
+    dbg
+        "\n"
+
+    dbg
+        drawnGrid
+
+    dbg
+        "\n"
+
+    dbg
+        drawnGridWithMarked
+
+    Set.len intersection
+    |> Num.toStr
+    |> Ok

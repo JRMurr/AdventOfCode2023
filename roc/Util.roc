@@ -12,8 +12,11 @@ interface Util
         mapAdjacent,
         mapLines,
         headTail,
+        drawArray,
     ]
-    imports []
+    imports [
+        Array2D.{ Index, Array2D },
+    ]
 
 toU64Unsafe = \s ->
     when Str.toU64 s is
@@ -88,3 +91,19 @@ headTail = \lst ->
     when lst is
         [head, .. as tail] -> Ok (head, tail)
         _ -> Err EmptyList
+
+drawArray : Array2D a, (a, Index -> Str) -> Str
+drawArray = \arr, mapper ->
+    Array2D.walk
+        arr
+        ["\n"]
+        { direction: Forwards, orientation: Rows }
+        (\acc, elem, idx ->
+
+            mappedElem = mapper elem idx
+
+            withNewLine = if Array2D.isRowEnd arr idx then "\(mappedElem)\n" else mappedElem
+
+            List.append acc withNewLine
+        )
+    |> Str.joinWith ""
