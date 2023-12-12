@@ -76,17 +76,8 @@ expandGrid = \grid, growthFactor ->
         )
     newGalaxyIdxs
 
-# newShape = { dimX: dimX + Set.len missingXs, dimY: dimY + Set.len missingYs }
-
-# Array2D.init
-#     newShape
-#     (\idx ->
-#         if Set.contains newGalaxyIdxs idx then Galaxy else Empty
-#     )
-
 getDistances : Set Index -> Nat
 getDistances = \galaxyIdxs ->
-    # galaxyIdxs = findGalaxys grid
     pairedGalaxyIdxs = Util.cartProdUnique (Set.toList galaxyIdxs)
 
     pairedGalaxyIdxs
@@ -99,15 +90,9 @@ part1 = \in ->
     galaxyIdxs =
         parseGrid in
         |> expandGrid 2
-    # dbg
-    #     (Util.drawArray grid (\t, _ -> if t == Galaxy then "#" else "."))
-
-    # dbg
-    #     (Util.drawArray (expandGrid grid) (\t, _ -> if t == Galaxy then "#" else "."))
     getDistances galaxyIdxs
     |> Num.toStr
     |> Ok
-# Err NotImplemented
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
 part2 = \in ->
