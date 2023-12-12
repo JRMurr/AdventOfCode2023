@@ -37,8 +37,10 @@ findGalaxys = \grid ->
             if tile == Galaxy then Set.insert acc idx else acc
         )
 
-expandGrid : Grid -> Grid
-expandGrid = \grid ->
+# expand grid and get back the new galaxyIndexs
+expandGrid : Grid, Nat -> Set Index
+expandGrid = \grid, growthFactor ->
+    replaceMentMul = if growthFactor == 0 then 0 else growthFactor - 1
     galaxyIdxs = findGalaxys grid
     { dimX, dimY } = Array2D.shape grid
 
@@ -58,6 +60,7 @@ expandGrid = \grid ->
     numLessThan = \set, val ->
         Set.keepIf set (\x -> x < val)
         |> Set.len
+        |> Num.mul replaceMentMul
 
     # for each galaxy
     # new x = old x + <number of missingXs < old x>
@@ -71,18 +74,19 @@ expandGrid = \grid ->
 
             { x, y }
         )
+    newGalaxyIdxs
 
-    newShape = { dimX: dimX + Set.len missingXs, dimY: dimY + Set.len missingYs }
+# newShape = { dimX: dimX + Set.len missingXs, dimY: dimY + Set.len missingYs }
 
-    Array2D.init
-        newShape
-        (\idx ->
-            if Set.contains newGalaxyIdxs idx then Galaxy else Empty
-        )
+# Array2D.init
+#     newShape
+#     (\idx ->
+#         if Set.contains newGalaxyIdxs idx then Galaxy else Empty
+#     )
 
-getDistances : Grid -> Nat
-getDistances = \grid ->
-    galaxyIdxs = findGalaxys grid
+getDistances : Set Index -> Nat
+getDistances = \galaxyIdxs ->
+    # galaxyIdxs = findGalaxys grid
     pairedGalaxyIdxs = Util.cartProdUnique (Set.toList galaxyIdxs)
 
     pairedGalaxyIdxs
@@ -92,18 +96,25 @@ getDistances = \grid ->
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
 
-    grid =
+    galaxyIdxs =
         parseGrid in
-        |> expandGrid
+        |> expandGrid 2
     # dbg
     #     (Util.drawArray grid (\t, _ -> if t == Galaxy then "#" else "."))
 
     # dbg
     #     (Util.drawArray (expandGrid grid) (\t, _ -> if t == Galaxy then "#" else "."))
-    getDistances grid
+    getDistances galaxyIdxs
     |> Num.toStr
     |> Ok
 # Err NotImplemented
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+    galaxyIdxs =
+        parseGrid in
+        |> expandGrid 1_000_000
+
+    getDistances galaxyIdxs
+    |> Num.toStr
+    |> Ok
