@@ -18,6 +18,9 @@ interface Coord
 
         # all dirs
         getNeighbors,
+
+        # other
+        distance,
     ]
     imports [
         Array2D.{ Array2D, Index, isRowEnd, isColEnd, isRowStart, isColStart, shape },
@@ -127,3 +130,14 @@ expect
         { x: 2, y: 2 }, # dr
         { x: 2, y: 0 }, # dl
     ]
+
+distance : Index, Index -> Nat
+distance = \a, b ->
+    convertSub = \x, y ->
+        iX = Num.toI64 x
+        iY = Num.toI64 y
+        iX - iY
+
+    dist = Num.abs (convertSub b.x a.x) + Num.abs (convertSub b.y a.y)
+
+    dist |> Num.toNat

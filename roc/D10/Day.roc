@@ -23,16 +23,16 @@ Tile : [
     Start, # S
 ]
 
-tileToChar = \t ->
-    when t is
-        Vertical -> "|"
-        Horizontal -> "-"
-        NorthEast -> "L"
-        NorthWest -> "J"
-        SouthWest -> "7"
-        SouthEast -> "F"
-        Ground -> "."
-        Start -> "S"
+# tileToChar = \t ->
+#     when t is
+#         Vertical -> "|"
+#         Horizontal -> "-"
+#         NorthEast -> "L"
+#         NorthWest -> "J"
+#         SouthWest -> "7"
+#         SouthEast -> "F"
+#         Ground -> "."
+#         Start -> "S"
 
 Grid : Array2D Tile
 

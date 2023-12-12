@@ -13,9 +13,14 @@ interface Util
         mapLines,
         headTail,
         drawArray,
+        parse2D,
+        withIndex,
+        cartProdUnique,
     ]
     imports [
         Array2D.{ Index, Array2D },
+        Parser.Core.{ Parser, oneOrMore, sepBy, map },
+        Parser.String.{ Utf8, parseStr, scalar },
     ]
 
 toU64Unsafe = \s ->
@@ -107,3 +112,43 @@ drawArray = \arr, mapper ->
             List.append acc withNewLine
         )
     |> Str.joinWith ""
+
+# Parse a map of tiles into a 2d array with the given tile parser
+parse2D : Str, Parser Utf8 tile -> Result (Array2D tile) Str
+parse2D = \s, tileParser ->
+    line : Parser Utf8 (List tile)
+    line = oneOrMore tileParser
+
+    lines : Parser Utf8 (List (List tile))
+    lines = line |> sepBy (scalar '\n')
+
+    grid : Parser Utf8 (Array2D tile)
+    grid =
+        lines
+        |> map (\parsedLines -> (Array2D.fromExactLists parsedLines) |> Result.mapErr (\_ -> "InconsistentRowLengths"))
+        |> Parser.Core.flatten
+
+    when parseStr grid (Str.trim s) is
+        Ok g -> Ok g
+        Err (ParsingFailure e) -> Err "ParsingFailure: \(e)"
+        Err (ParsingIncomplete e) -> Err "ParsingIncomplete: \(e)"
+
+withIndex : List a -> List (a, Nat)
+withIndex = \lst ->
+    List.mapWithIndex lst (\a, idx -> (a, idx))
+
+cartProdUnique : List a -> List (a, a)
+cartProdUnique = \lst ->
+    lstwithIdx = withIndex lst
+
+    List.joinMap
+        lstwithIdx
+        (\(x, idxX) ->
+            List.keepOks
+                lstwithIdx
+                (\(y, idxY) ->
+                    if idxX != idxY && idxX < idxY then Ok (x, y) else Err BadPair
+                )
+        )
+
+expect cartProdUnique [1, 2, 3] == [(1, 2), (1, 3), (2, 3)]
