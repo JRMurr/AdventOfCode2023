@@ -8,20 +8,25 @@ interface Util
         tuplify3,
         countElems,
         unwrap,
+        unwrapS,
         dbge,
         mapAdjacent,
         mapLines,
         headTail,
         drawArray,
+        get2DParser,
+        parseSepEmptyLine,
         parse2D,
         withIndex,
         cartProdUnique,
         getOrCompute,
+        tileParser,
+        simpleParse,
     ]
     imports [
         Array2D.{ Index, Array2D },
-        Parser.Core.{ Parser, oneOrMore, sepBy, map },
-        Parser.String.{ Utf8, parseStr, scalar },
+        Parser.Core.{ Parser, oneOrMore, sepBy, map, skip, oneOf, const },
+        Parser.String.{ Utf8, parseStr, scalar, string },
     ]
 
 toU64Unsafe = \s ->
@@ -77,6 +82,12 @@ unwrap = \res ->
         Ok x -> x
         Err _ -> crash "bad unwrap"
 
+unwrapS : Result a Str -> a
+unwrapS = \res ->
+    when res is
+        Ok x -> x
+        Err s -> crash "bad unwrap: \(s)"
+
 dbge = \x ->
     dbg
         x
@@ -114,25 +125,45 @@ drawArray = \arr, mapper ->
         )
     |> Str.joinWith ""
 
-# Parse a map of tiles into a 2d array with the given tile parser
-parse2D : Str, Parser Utf8 tile -> Result (Array2D tile) Str
-parse2D = \s, tileParser ->
+get2DParser : Parser Utf8 tile -> Parser Utf8 (Array2D tile)
+get2DParser = \tile ->
     line : Parser Utf8 (List tile)
-    line = oneOrMore tileParser
+    line = oneOrMore tile
 
     lines : Parser Utf8 (List (List tile))
     lines = line |> sepBy (scalar '\n')
 
-    grid : Parser Utf8 (Array2D tile)
-    grid =
-        lines
-        |> map (\parsedLines -> (Array2D.fromExactLists parsedLines) |> Result.mapErr (\_ -> "InconsistentRowLengths"))
-        |> Parser.Core.flatten
+    lines
+    |> map (\parsedLines -> (Array2D.fromExactLists parsedLines) |> Result.mapErr (\_ -> "InconsistentRowLengths"))
+    |> Parser.Core.flatten
 
-    when parseStr grid (Str.trim s) is
-        Ok g -> Ok g
+simpleParse = \s, p ->
+    when parseStr p (Str.trim s) is
+        Ok res -> Ok res
         Err (ParsingFailure e) -> Err "ParsingFailure: \(e)"
         Err (ParsingIncomplete e) -> Err "ParsingIncomplete: \(e)"
+
+# Parse a map of tiles into a 2d array with the given tile parser
+parse2D : Str, Parser Utf8 tile -> Result (Array2D tile) Str
+parse2D = \s, tile ->
+    grid = get2DParser tile
+
+    simpleParse s grid
+
+parseSepEmptyLine : Str, Parser Utf8 res -> Result (List res) Str
+parseSepEmptyLine = \s, p ->
+    all = p |> sepBy (string "\n\n")
+
+    simpleParse s all
+
+tileParser : List (tile, U32) -> Parser Utf8 tile
+tileParser = \pairs ->
+    List.map
+        pairs
+        (\(tile, s) ->
+            const tile |> skip (scalar s)
+        )
+    |> oneOf
 
 withIndex : List a -> List (a, Nat)
 withIndex = \lst ->

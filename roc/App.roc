@@ -18,6 +18,7 @@ interface App
         D10.Day,
         D11.Day,
         D12.Day,
+        D13.Day,
         # -- Add day import
     ]
 
@@ -60,5 +61,6 @@ solutions = [
     D10.Day.solution,
     D11.Day.solution,
     D12.Day.solution,
+    D13.Day.solution,
     # -- Add day List
 ]
