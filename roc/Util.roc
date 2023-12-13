@@ -16,6 +16,7 @@ interface Util
         parse2D,
         withIndex,
         cartProdUnique,
+        getOrCompute,
     ]
     imports [
         Array2D.{ Index, Array2D },
@@ -152,3 +153,9 @@ cartProdUnique = \lst ->
         )
 
 expect cartProdUnique [1, 2, 3] == [(1, 2), (1, 3), (2, 3)]
+
+getOrCompute : Dict k v, k, ({} -> v) -> v
+getOrCompute = \d, k, compute ->
+    when Dict.get d k is
+        Ok res -> res
+        Err _ -> compute {}
