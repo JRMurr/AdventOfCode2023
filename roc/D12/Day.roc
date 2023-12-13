@@ -73,10 +73,10 @@ Cache : Dict Row Nat
 
 countPossibleHelper : Row, Cache -> (Cache, Nat)
 countPossibleHelper = \{ springs, groups }, cache ->
-    insertAndRet = \d, v ->
-        (Dict.insert d { springs, groups } v, v)
+    # insertAndRet = \d, v ->
+    #     (Dict.insert d { springs, groups } v, v)
 
-    returnNoPossible = \{} -> insertAndRet cache 0
+    # returnNoPossible = \{} -> insertAndRet cache 0
 
     containsWorking : List Spring -> Bool
     containsWorking = \lst -> List.contains lst Working
@@ -93,22 +93,24 @@ countPossibleHelper = \{ springs, groups }, cache ->
                 if
                     List.any springs (\p -> p == Broken)
                 then
-                    returnNoPossible {}
+                    # returnNoPossible {}
+                    (Dict.insert cache { springs, groups } 0, 0)
                 else
-                    insertAndRet cache 1
+                    # insertAndRet cache 1
+                    (Dict.insert cache { springs, groups } 1, 1)
 
             Ok group -> handleSingleGroup group
 
     handleSingleGroup = \group ->
         firstPossibleBrokenRes = List.findFirstIndex springs (\p -> p == Broken || p == Unknown)
         when firstPossibleBrokenRes is
-            Err _ -> returnNoPossible {}
+            Err _ -> (Dict.insert cache { springs, groups } 0, 0)
             Ok n ->
                 springGroup = List.sublist springs { start: n, len: group }
                 if
                     List.len springGroup != group
                 then
-                    returnNoPossible {}
+                    (Dict.insert cache { springs, groups } 0, 0)
                 else
                     invalidPerm = containsWorking springGroup || idxIsBroken springs (n + group)
                     if
@@ -118,10 +120,11 @@ countPossibleHelper = \{ springs, groups }, cache ->
                             if
                                 List.get springs n == Ok Broken
                             then
-                                returnNoPossible {}
+                                (Dict.insert cache { springs, groups } 0, 0)
                             else
                                 x = countPossibleHelper { springs: List.dropFirst springs (n + 1), groups } cache
-                                insertAndRet x.0 x.1
+                                # insertAndRet x.0 x.1
+                                (Dict.insert x.0 { springs, groups } x.1, x.1)
                         )
                         # current perm is the same size as the group we want and it only has unknowns or brokens
                     else
@@ -129,18 +132,21 @@ countPossibleHelper = \{ springs, groups }, cache ->
                             if
                                 List.get springs n == Ok Broken
                             then
-                                returnNoPossible {} # no extra since the current idx we are looking at is fixed
+                                (Dict.insert cache { springs, groups } 0, 0)
+                                # no extra since the current idx we are looking at is fixed
                             else
                                 # curr is unknown so lets treat it as empty and see if this group size can still appear
                                 x = countPossibleHelper { springs: List.dropFirst springs (n + 1), groups } cache
-                                insertAndRet x.0 x.1
+                                # insertAndRet x.0 x.1
+                                (Dict.insert x.0 { springs, groups } x.1, x.1)
                         )
 
                         droppedSprings = List.dropFirst springs (n + group + 1)
                         droppedGroups = List.dropFirst groups 1
                         res2 = countPossibleHelper { springs: droppedSprings, groups: droppedGroups } res1.0
 
-                        insertAndRet res2.0 (res2.1 + res1.1)
+                        # insertAndRet res2.0 (res2.1 + res1.1)
+                        (Dict.insert res2.0 { springs, groups } (res2.1 + res1.1), (res2.1 + res1.1))
 
     when Dict.get cache { springs, groups } is
         Ok res -> (cache, res)
