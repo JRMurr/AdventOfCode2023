@@ -160,9 +160,6 @@ countPossible = \row ->
 
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
-    dbg
-        parseRows in
-
     in
     |> parseRows
     |> Util.unwrap
@@ -172,4 +169,20 @@ part1 = \in ->
     |> Ok
 
 part2 : Str -> Result Str [NotImplemented, Error Str]
-part2 = \_ -> Err NotImplemented
+part2 = \in ->
+    in
+    |> parseRows
+    |> Util.unwrap
+    |> List.map (\{springs, groups} ->
+        repeatAndJoin = \lst, fill -> 
+            lst |> List.repeat 5 |> List.intersperse fill |> List.join
+        newSprings = repeatAndJoin springs [Unknown]
+
+        newGroups = groups |> List.repeat 5 |> List.join
+        
+        {springs: newSprings, groups: newGroups}
+    )
+    |> List.map countPossible
+    |> List.sum
+    |> Num.toStr
+    |> Ok
