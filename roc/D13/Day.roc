@@ -20,30 +20,75 @@ patternParser =
 parsePatterns : Str -> List Pattern
 parsePatterns = \s -> Util.parseSepEmptyLine s patternParser |> Util.unwrapS
 
+# For reflect funcs, the second arg means we are flipping "after" that row/col
+# ie if 4 we flip btwn col/row 4,5
+
 reflectOverRow : Index, Nat -> Index
 reflectOverRow = \idx, flipRow ->
     { x: column, y: row } = idx
     if row <= flipRow then
-        diff = flipRow - row
+        diff = (flipRow - row) + 1
         { x: column, y: flipRow + diff }
     else
-        # we should only check one side, crash if we get here to save time
-        crash "index has row greater than flip"
+        diff = (row - flipRow) - 1
+        { x: column, y: flipRow - diff }
+
+expect reflectOverRow { x: 0, y: 4 } 4 == { x: 0, y: 5 }
+expect reflectOverRow { x: 0, y: 5 } 4 == { x: 0, y: 4 }
+expect reflectOverRow { x: 0, y: 1 } 4 == { x: 0, y: 8 }
+expect reflectOverRow { x: 0, y: 0 } 4 == { x: 0, y: 9 }
 
 reflectOverCol : Index, Nat -> Index
 reflectOverCol = \idx, flipCol ->
     { x: column, y: row } = idx
     if column <= flipCol then
-        diff = flipCol - row
+        diff = flipCol - row + 1
         { x: flipCol + diff, y: row }
     else
-        # we should only check one side, crash if we get here to save time
-        crash "index has column greater than flip"
+        diff = row - flipCol - 1
+        { x: flipCol - diff, y: row }
+
+validFlip : Pattern, Tile, Index -> Bool
+validFlip = \pattern, ogVal, flippedIdx ->
+    when Array2D.get pattern flippedIdx is
+        Ok vFlip -> ogVal == vFlip
+        Err _ -> Bool.true
+
+findRowReflect : Pattern -> Result Index [NotFound]
+findRowReflect = \pattern ->
+    { dimX: numCols, dimY: numRows } = Array2D.shape pattern
+
+    # dbg {numCols, numRows}
+
+    possibleColFlip = numCols // 2
+
+    # TODO: only need to walk up to the flip idx
+    validColFlip = Array2D.walkUntil
+        pattern
+        Bool.true
+        { direction: Forwards }
+        (\_, val, idx ->
+            flipped = reflectOverCol idx possibleColFlip
+            if validFlip pattern val flipped then
+                Continue Bool.true
+            else
+                dbg
+                    { val, idx, flipped }
+
+                Break Bool.false
+        )
+
+    dbg
+        validColFlip
+
+    Err NotFound
 
 part1 : Str -> Result Str [NotImplemented, Error Str]
 part1 = \in ->
+    patterns = parsePatterns in
+
     dbg
-        parsePatterns in
+        patterns |> List.map findRowReflect
 
     Err NotImplemented
 
